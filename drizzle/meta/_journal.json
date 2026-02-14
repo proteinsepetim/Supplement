@@ -8,6 +8,13 @@
       "when": 1771023070744,
       "tag": "0000_fearless_captain_britain",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1771066221839,
+      "tag": "0001_superb_gunslinger",
+      "breakpoints": true
     }
   ]
 }

@@ -49,3 +49,11 @@
 - [x] Frontend API bağlantılarına try-catch error handling ekleme
 - [x] Mobil viewport modal/form responsive sorunlarını çözme (< 768px)
 - [x] Tüm API endpoint'lerini test etme
+
+## Veritabanı Bağlantısı ve Entegrasyon
+- [x] Veritabanı şeması oluşturma (products, orders, order_items, categories, newsletter, stock_alerts)
+- [x] Veritabanı bağlantısını test etme
+- [x] Tabloları migrate etme (pnpm db:push) - 8 tablo başarıyla oluşturuldu
+- [x] Örnek ürün verilerini veritabanına aktarma (seed) - 4 kategori, 3 ürün, 6 varyant
+- [x] Backend API'leri oluşturma (trpc.products, trpc.categories)
+- [ ] Frontend'i veritabanından veri çekecek şekilde güncelleme (sonraki adım)

@@ -89,4 +89,39 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+// Product & Category queries
+export async function getAllCategories() {
+  const db = await getDb();
+  if (!db) return [];
+  const { categories } = await import('../drizzle/schema');
+  return await db.select().from(categories);
+}
+
+export async function getAllProducts() {
+  const db = await getDb();
+  if (!db) return [];
+  const { products } = await import('../drizzle/schema');
+  return await db.select().from(products).where(eq(products.isActive, 'true'));
+}
+
+export async function getProductBySlug(slug: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const { products } = await import('../drizzle/schema');
+  const result = await db.select().from(products).where(eq(products.slug, slug)).limit(1);
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function getProductVariants(productId: string) {
+  const db = await getDb();
+  if (!db) return [];
+  const { productVariants } = await import('../drizzle/schema');
+  return await db.select().from(productVariants).where(eq(productVariants.productId, productId));
+}
+
+export async function getProductsByCategory(categoryId: string) {
+  const db = await getDb();
+  if (!db) return [];
+  const { products } = await import('../drizzle/schema');
+  return await db.select().from(products).where(eq(products.categoryId, categoryId));
+}

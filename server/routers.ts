@@ -213,6 +213,41 @@ export const appRouter = router({
         return { success: true };
       }),
   }),
+
+  // ===== Products Router (Database-backed) =====
+  products: router({
+    list: publicProcedure
+      .query(async () => {
+        const { getAllProducts } = await import('./db');
+        return await getAllProducts();
+      }),
+    
+    bySlug: publicProcedure
+      .input(z.object({ slug: z.string() }))
+      .query(async ({ input }) => {
+        const { getProductBySlug, getProductVariants } = await import('./db');
+        const product = await getProductBySlug(input.slug);
+        if (!product) return null;
+        const variants = await getProductVariants(product.id);
+        return { ...product, variants };
+      }),
+    
+    byCategory: publicProcedure
+      .input(z.object({ categoryId: z.string() }))
+      .query(async ({ input }) => {
+        const { getProductsByCategory } = await import('./db');
+        return await getProductsByCategory(input.categoryId);
+      }),
+  }),
+
+  // ===== Categories Router (Database-backed) =====
+  categories: router({
+    list: publicProcedure
+      .query(async () => {
+        const { getAllCategories } = await import('./db');
+        return await getAllCategories();
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
