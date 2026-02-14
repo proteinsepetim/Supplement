@@ -139,6 +139,13 @@
   }
 }
 
+/* Dynamic viewport height - mobil tarayıcı address bar sorunu */
+@supports (min-height: 100dvh) {
+  .min-h-screen {
+    min-height: 100dvh !important;
+  }
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

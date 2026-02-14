@@ -34,7 +34,7 @@ function Router() {
       <Route path="/urun/:slug" component={ProductDetail} />
       <Route path="/sepet" component={CartPage} />
       <Route path="/odeme" component={CheckoutPage} />
-      <Route path="/admin" component={AdminPage} />
+      <Route path="/yonetim-paneli" component={AdminPage} />
       <Route path="/marka/:slug" component={BrandPage} />
       <Route path="/markalar" component={BrandsListPage} />
       <Route path="/supplement-sihirbazi" component={QuizPage} />

@@ -57,3 +57,34 @@
 - [x] Örnek ürün verilerini veritabanına aktarma (seed) - 4 kategori, 3 ürün, 6 varyant
 - [x] Backend API'leri oluşturma (trpc.products, trpc.categories)
 - [ ] Frontend'i veritabanından veri çekecek şekilde güncelleme (sonraki adım)
+
+## Anahtar Teslim Satışa Hazır - Yeni Görevler
+
+### FAZ 1: Onarım ve Stabilizasyon
+- [x] 100vh → 100dvh değişimi (@supports ile global CSS)
+- [x] useLockBodyScroll hook'u oluşturma (modal/menü açıkken body scroll kilitleme)
+- [x] Bildirim dropdown mobilde sola taşma sorunu düzeltme (Portal + bottom sheet)
+- [x] Modal/bildirim z-index ve positioning düzeltme (z-[9999] + fixed)
+- [x] Responsive modal/form padding ve centering
+
+### FAZ 1B: Auth & Giriş Sistemi
+- [x] Üye olma/giriş çalışır hale getirme (Manus OAuth entegrasyonu)
+- [x] "Yakında aktif" mesajını kaldırma, gerçek login akışı
+- [x] Admin paneli ana sayfadan kaldırıp gizli link yapma (/yonetim-paneli)
+- [x] Header'daki kullanıcı ikonu login/profil akışı (avatar + dropdown menü)
+
+### FAZ 2: Admin Panel 2026
+- [ ] Admin panel modern UI (React 19, Tailwind v4, shadcn/ui)
+- [ ] RBAC (Rol Tabanlı Erişim) - admin/user rolleri
+- [ ] Chat-to-Data widget (doğal dil ile veri sorgulama)
+- [ ] Sipariş yönetimi, ürün CRUD, stok güncelleme
+
+### FAZ 3: Supplement Sihirbazı
+- [ ] Öneri algoritması (recommendationEngine)
+- [ ] Çok adımlı modal form (cinsiyet/yaş/kilo/boy → hedef → diyet → sonuç)
+- [ ] "Hepsini Sepete Ekle" butonu
+
+### FAZ 4: SEO/GEO
+- [ ] Dinamik JSON-LD (Product, FAQPage, LocalBusiness şemaları)
+- [ ] ipinfo.io geo-tespit entegrasyonu (ücretsiz)
+- [ ] Meta etiketler güncelleme
