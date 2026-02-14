@@ -7,6 +7,7 @@ import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import cors from "cors";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -30,9 +31,44 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 async function startServer() {
   const app = express();
   const server = createServer(app);
+
+  // CORS Configuration - Allow all origins in development, specific origins in production
+  const corsOptions = {
+    origin: process.env.NODE_ENV === "production" 
+      ? [process.env.FRONTEND_URL, "https://proteinmkt-nnma2hgu.manus.space"].filter((url): url is string => typeof url === "string")
+      : true, // Allow all origins in development
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  };
+  app.use(cors(corsOptions));
+
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+  // Health Check Endpoint
+  app.get("/api/health", (req, res) => {
+    res.status(200).json({ 
+      status: "ok", 
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: process.env.NODE_ENV || "development"
+    });
+  });
+
+  // API Status Endpoint
+  app.get("/api/status", (req, res) => {
+    res.status(200).json({ 
+      status: "running",
+      version: "1.0.0",
+      endpoints: {
+        health: "/api/health",
+        trpc: "/api/trpc",
+        oauth: "/api/oauth/callback"
+      }
+    });
+  });
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
   // tRPC API

@@ -42,3 +42,10 @@
 - [x] useDocumentHead hook'u (meta tags, canonical, schema JSON-LD)
 - [x] robots.txt ve sitemap.xml
 - [x] CheckoutPage yasal sözleşme checkbox'ları (zorunlu)
+
+## Backend API & Responsive Fixes
+- [x] Health check endpoint (/api/health) ekleme
+- [x] CORS yapılandırması kontrolü ve düzeltme
+- [x] Frontend API bağlantılarına try-catch error handling ekleme
+- [x] Mobil viewport modal/form responsive sorunlarını çözme (< 768px)
+- [x] Tüm API endpoint'lerini test etme
