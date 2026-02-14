@@ -14,8 +14,10 @@ import { useCart } from '@/contexts/CartContext';
 import { useNotifications } from '@/contexts/NotificationContext';
 import ProductCard from '@/components/ProductCard';
 import StockAlertModal from '@/components/StockAlertModal';
+import MobileStickyBar from '@/components/MobileStickyBar';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { useDocumentHead, createProductSchema, createBreadcrumbSchema } from '@/hooks/useDocumentHead';
 
 function ScoreBar({ label, value, max = 10 }: { label: string; value: number; max?: number }) {
   const pct = (value / max) * 100;
@@ -82,6 +84,34 @@ export default function ProductDetail() {
     if (!product) return [];
     return product.crossSellIds.map(id => getProductById(id)).filter(Boolean) as Product[];
   }, [product]);
+
+  useDocumentHead({
+    title: product ? `${product.name} - ${brand?.name || 'ProteinMarket'}` : 'Ürün Bulunamadı',
+    description: product ? `${product.name} - ${product.description.slice(0, 150)}. Orijinal ürün garantisi ile ProteinMarket'te.` : undefined,
+    canonical: product ? `/urun/${product.slug}` : undefined,
+    ogImage: product?.image,
+    ogType: 'product',
+    schema: product && selectedVariant ? [
+      createProductSchema({
+        name: product.name,
+        description: product.description,
+        image: product.image,
+        slug: product.slug,
+        brand: brand?.name || '',
+        sku: selectedVariant.sku,
+        price: selectedVariant.price,
+        oldPrice: selectedVariant.oldPrice,
+        inStock: selectedVariant.stock > 0,
+        rating: product.rating,
+        reviewCount: product.reviewCount,
+      }),
+      createBreadcrumbSchema([
+        { name: 'Anasayfa', url: '/' },
+        { name: category, url: `/kategori/${product.category}` },
+        { name: product.name, url: `/urun/${product.slug}` },
+      ]),
+    ] : undefined,
+  });
 
   const sameBrandProducts = useMemo(() => {
     if (!product) return [];
@@ -232,7 +262,7 @@ export default function ProductDetail() {
                                   product.variants.find(v => v.flavor === flavor);
                         if (v) setSelectedVariant(v);
                       }}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
+                      className={`px-4 py-2.5 rounded-lg text-sm font-medium border transition-all min-h-[44px] min-w-[44px] ${
                         selectedVariant?.flavor === flavor
                           ? 'border-[#FF6B35] bg-orange-50 text-[#FF6B35]'
                           : 'border-gray-200 text-gray-600 hover:border-gray-300'
@@ -258,7 +288,7 @@ export default function ProductDetail() {
                                   product.variants.find(v => v.weight === weight);
                         if (v) setSelectedVariant(v);
                       }}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
+                      className={`px-4 py-2.5 rounded-lg text-sm font-medium border transition-all min-h-[44px] min-w-[44px] ${
                         selectedVariant?.weight === weight
                           ? 'border-[#FF6B35] bg-orange-50 text-[#FF6B35]'
                           : 'border-gray-200 text-gray-600 hover:border-gray-300'
@@ -425,10 +455,10 @@ export default function ProductDetail() {
                   </thead>
                   <tbody>
                     {product.nutrition.map((n, i) => (
-                      <tr key={i} className="border-b border-gray-50">
-                        <td className="py-2 text-gray-600">{n.label}</td>
-                        <td className="py-2 text-right text-gray-600">{n.per100g}</td>
-                        <td className="py-2 text-right font-medium text-[#1B2A4A]">{n.perServing}</td>
+                      <tr key={i} className={`border-b border-gray-50 ${i % 2 === 0 ? 'bg-gray-50/50' : 'bg-white'}`}>
+                        <td className="py-2.5 px-2 text-gray-600">{n.label}</td>
+                        <td className="py-2.5 px-2 text-right text-gray-600">{n.per100g}</td>
+                        <td className="py-2.5 px-2 text-right font-medium text-[#1B2A4A]">{n.perServing}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -515,6 +545,19 @@ export default function ProductDetail() {
           productName={product.name}
         />
       )}
+
+      {/* Mobile Sticky Bottom Bar */}
+      {selectedVariant && selectedVariant.stock > 0 && (
+        <MobileStickyBar
+          mode="product"
+          price={selectedVariant.price}
+          onAddToCart={handleAddToCart}
+          disabled={selectedVariant.stock === 0}
+        />
+      )}
+
+      {/* Spacer for mobile sticky bar */}
+      <div className="h-20 lg:hidden" />
     </div>
   );
 }

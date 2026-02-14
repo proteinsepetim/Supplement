@@ -19,9 +19,13 @@ import QuizPage from "./pages/QuizPage";
 import ComparePage from "./pages/ComparePage";
 import BundlePage from "./pages/BundlePage";
 import FavoritesPage from "./pages/FavoritesPage";
+import StaticPage from "./pages/StaticPage";
+import NotificationsPage from "./pages/NotificationsPage";
+import NotificationPreferencesPage from "./pages/NotificationPreferencesPage";
+import PushNotificationBanner from "./components/PushNotificationBanner";
 import Layout from "./components/Layout";
-
 function Router() {
+  // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
       <Route path="/" component={Home} />
@@ -37,6 +41,9 @@ function Router() {
       <Route path="/karsilastir" component={ComparePage} />
       <Route path="/paket-olustur" component={BundlePage} />
       <Route path="/favoriler" component={FavoritesPage} />
+      <Route path="/bildirimler" component={NotificationsPage} />
+      <Route path="/bildirim-tercihleri" component={NotificationPreferencesPage} />
+      <Route path="/sayfa/:slug" component={StaticPage} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
@@ -54,6 +61,7 @@ function App() {
                 <Toaster richColors position="top-right" />
                 <Layout>
                   <Router />
+                  <PushNotificationBanner />
                 </Layout>
               </TooltipProvider>
             </SearchProvider>

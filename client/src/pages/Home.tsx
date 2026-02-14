@@ -1,15 +1,17 @@
 /*
  * Home Page - Athletic Precision Design
  * Hero slider, kategoriler, bestseller, supplement sihirbazı CTA, kampanya banner
- * Newsletter, sosyal kanıt, müşteri yorumları bölümleri eklendi
+ * Newsletter, müşteri yorumları bölümleri
+ * P0 düzeltmeleri: fake iddialar kaldırıldı/demo etiketlendi, countdown gerçek cutoff saatine bağlandı
  */
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'wouter';
-import { ChevronRight, Clock, Truck, Shield, Award, Zap, ArrowRight, Dumbbell, Flame, TrendingUp, Pill, Cookie, Shirt, Gift, Tag, Percent, Star, Users, Package, Mail, CheckCircle } from 'lucide-react';
+import { ChevronRight, Clock, Truck, Shield, Award, Zap, ArrowRight, Dumbbell, Flame, TrendingUp, Pill, Cookie, Shirt, Gift, Tag, Percent, Star, Package, Mail, CheckCircle } from 'lucide-react';
 import { products, categories, brands, campaigns } from '@/lib/data';
 import ProductCard from '@/components/ProductCard';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { useDocumentHead, createOrganizationSchema, createWebSiteSchema } from '@/hooks/useDocumentHead';
 
 const HERO_BANNER_1 = 'https://private-us-east-1.manuscdn.com/sessionFile/Ap796PH8GtTpKpQgjkfMDs/sandbox/f7hlQElW7PWg8tRhOWLqvM-img-1_1770600194000_na1fn_aGVyby1iYW5uZXItMQ.jpg?x-oss-process=image/resize,w_1920,h_1920/format,webp/quality,q_80&Expires=1798761600&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly9wcml2YXRlLXVzLWVhc3QtMS5tYW51c2Nkbi5jb20vc2Vzc2lvbkZpbGUvQXA3OTZQSDhHdFRwS3BRZ2prZk1Ecy9zYW5kYm94L2Y3aGxRRWxXN1BXZzh0UmhPV0xxdk0taW1nLTFfMTc3MDYwMDE5NDAwMF9uYTFmbl9hR1Z5YnkxaVlXNXVaWEl0TVEuanBnP3gtb3NzLXByb2Nlc3M9aW1hZ2UvcmVzaXplLHdfMTkyMCxoXzE5MjAvZm9ybWF0LHdlYnAvcXVhbGl0eSxxXzgwIiwiQ29uZGl0aW9uIjp7IkRhdGVMZXNzVGhhbiI6eyJBV1M6RXBvY2hUaW1lIjoxNzk4NzYxNjAwfX19XX0_&Key-Pair-Id=K2HSFNDJXOU9YS&Signature=czn5qLPOJlRhGCSRp8Rm49JLqNq5OnL5mjLaJYSAKmG~woE1JvZGpY9n0TWK2DaYY7jrHAG5KHYTqEWyKDhTHEzF6dQ7ZYyReKSLzDMJhIAyM1iH6E4PVhIZiKj7DH2GpkMVPm5GWkFTa2yWKCfsgFrJ7icIAtu7ySf9CaF3l8tbpYqddtNBzlRkEUOuvVOGLxSFCCYxo1ZhY6sgJ6PTTC9lP7~RDKwjtnk9D9cpNRcC-a3BYTBfuuJwY2ciBLYezseWQtfRO9gkmTCwb8BenuCN3PQBMnoyFWx6cAJBt1f3VCa2dXZK~-M-UrTPrP7vXvdYs-jt8o4wDh5uagtqKw__';
 const HERO_BANNER_2 = 'https://private-us-east-1.manuscdn.com/sessionFile/Ap796PH8GtTpKpQgjkfMDs/sandbox/f7hlQElW7PWg8tRhOWLqvM-img-2_1770600203000_na1fn_aGVyby1iYW5uZXItMg.jpg?x-oss-process=image/resize,w_1920,h_1920/format,webp/quality,q_80&Expires=1798761600&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly9wcml2YXRlLXVzLWVhc3QtMS5tYW51c2Nkbi5jb20vc2Vzc2lvbkZpbGUvQXA3OTZQSDhHdFRwS3BRZ2prZk1Ecy9zYW5kYm94L2Y3aGxRRWxXN1BXZzh0UmhPV0xxdk0taW1nLTJfMTc3MDYwMDIwMzAwMF9uYTFmbl9hR1Z5YnkxaVlXNXVaWEl0TWcuanBnP3gtb3NzLXByb2Nlc3M9aW1hZ2UvcmVzaXplLHdfMTkyMCxoXzE5MjAvZm9ybWF0LHdlYnAvcXVhbGl0eSxxXzgwIiwiQ29uZGl0aW9uIjp7IkRhdGVMZXNzVGhhbiI6eyJBV1M6RXBvY2hUaW1lIjoxNzk4NzYxNjAwfX19XX0_&Key-Pair-Id=K2HSFNDJXOU9YS&Signature=ngdsA7THoz-wMOQjf4IvZsjTsyIZc91qooXtlSxREkT1GuSxOYuuVLlqndoBduDxo-E~0~0IFVzF7H-CVEAbY9Q7coLAhzTILkihKkhx9w389TTlIxhEHsD0vTKthlpIYXCCEO6s7K18QPjXTD~p~hwv~owpGxqUFV4S8fq7NqbENQERnPz6TJVaZ3OlYG-moQjW0zMaypwqEzXulwXQygkCqBWNpzt6UXxsp2nQlINeZ3trl8gMBzsg9y87fzFb6f8TOPzNVYQ8f4Mn0-kpkIYgJ9~yKAe7OZvPyHyR6p1fFg9WZdMceoULQ65aSJ6335f8j0DAIOwpzNcSdvE~PQ__';
@@ -36,23 +38,37 @@ const campaignIcons: Record<string, React.ElementType> = {
   'tiered': Tag,
 };
 
-// Müşteri yorumları
-const testimonials = [
-  { name: 'Ahmet K.', avatar: 'A', rating: 5, text: 'Ürünler orijinal ve kargo çok hızlı. 2 yıldır buradan alışveriş yapıyorum, hiç sorun yaşamadım.', product: 'Whey Protein 2000gr' },
-  { name: 'Elif D.', avatar: 'E', rating: 5, text: 'Supplement Sihirbazı özelliği harika! Bana tam ihtiyacım olan ürünleri önerdi. Teşekkürler!', product: 'BCAA 4:1:1' },
-  { name: 'Murat Y.', avatar: 'M', rating: 5, text: 'Fiyatlar piyasanın altında ve kampanyalar çok avantajlı. Paket oluştur özelliği de süper.', product: 'Kreatin Monohidrat' },
-  { name: 'Zeynep A.', avatar: 'Z', rating: 4, text: 'Besin değerleri tablosu ve skor kartı sayesinde ürünleri karşılaştırmak çok kolay.', product: 'İzole Protein' },
-];
-
+/**
+ * ShippingCountdown - Gerçek kesim saatine (16:00) bağlı countdown
+ * Hafta sonu ve saat geçtiyse "Pazartesi kargoda" mesajı gösterir
+ */
 function ShippingCountdown() {
   const [time, setTime] = useState({ hours: 0, minutes: 0, seconds: 0 });
+  const [isActive, setIsActive] = useState(true);
+
   useEffect(() => {
     const update = () => {
       const now = new Date();
+      const day = now.getDay(); // 0=Pazar, 6=Cumartesi
+      const hour = now.getHours();
+
+      // Hafta sonu veya saat 16:00'dan sonra ise aktif değil
+      if (day === 0 || day === 6 || hour >= 16) {
+        setIsActive(false);
+        return;
+      }
+
+      // Bugün saat 16:00'a kadar olan süre
       const cutoff = new Date();
       cutoff.setHours(16, 0, 0, 0);
-      if (now > cutoff) cutoff.setDate(cutoff.getDate() + 1);
       const diff = cutoff.getTime() - now.getTime();
+
+      if (diff <= 0) {
+        setIsActive(false);
+        return;
+      }
+
+      setIsActive(true);
       setTime({
         hours: Math.floor(diff / 3600000),
         minutes: Math.floor((diff % 3600000) / 60000),
@@ -68,10 +84,16 @@ function ShippingCountdown() {
     <div className="bg-gradient-to-r from-[#1B2A4A] to-[#2a3d5c] text-white py-2">
       <div className="container flex items-center justify-center gap-2 text-sm">
         <Clock className="w-4 h-4 text-[#FF6B35]" />
-        <span className="font-heading font-semibold">
-          <span className="text-[#FF6B35] font-bold">{String(time.hours).padStart(2, '0')}:{String(time.minutes).padStart(2, '0')}:{String(time.seconds).padStart(2, '0')}</span>
-          {' '}içinde sipariş ver, <span className="text-[#FF6B35]">BUGÜN KARGODA!</span>
-        </span>
+        {isActive ? (
+          <span className="font-heading font-semibold">
+            <span className="text-[#FF6B35] font-bold">{String(time.hours).padStart(2, '0')}:{String(time.minutes).padStart(2, '0')}:{String(time.seconds).padStart(2, '0')}</span>
+            {' '}içinde sipariş ver, <span className="text-[#FF6B35]">BUGÜN KARGODA!</span>
+          </span>
+        ) : (
+          <span className="font-heading font-semibold">
+            Siparişleriniz <span className="text-[#FF6B35]">en geç 1 iş günü</span> içinde kargoya verilir.
+          </span>
+        )}
       </div>
     </div>
   );
@@ -101,11 +123,11 @@ function NewsletterSection() {
             <Mail className="w-7 h-7 text-[#FF6B35]" />
           </div>
           <h2 className="font-heading font-bold text-2xl md:text-3xl text-white mb-2">Fırsatları Kaçırma!</h2>
-          <p className="text-gray-300 text-sm mb-6">E-bültenimize abone ol, özel indirimlerden ve yeni ürünlerden ilk sen haberdar ol. İlk alışverişinde <span className="text-[#FF6B35] font-bold">%10 indirim</span> hediye!</p>
+          <p className="text-gray-300 text-sm mb-6">E-bültenimize abone ol, özel indirimlerden ve yeni ürünlerden ilk sen haberdar ol.</p>
           {submitted ? (
             <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex items-center justify-center gap-2 text-green-400">
               <CheckCircle className="w-5 h-5" />
-              <span className="font-heading font-semibold">Kayıt başarılı! İndirim kodunuz e-postanıza gönderildi.</span>
+              <span className="font-heading font-semibold">Kayıt başarılı! Teşekkürler.</span>
             </motion.div>
           ) : (
             <form onSubmit={handleSubmit} className="flex gap-2 max-w-md mx-auto">
@@ -129,9 +151,16 @@ function NewsletterSection() {
 }
 
 export default function Home() {
+  useDocumentHead({
+    title: 'ProteinMarket | Premium Sporcu Gıdaları ve Takviye Ürünleri',
+    description: 'ProteinMarket - Orijinal sporcu gıdaları, protein tozu, kreatin, BCAA, vitamin ve daha fazlası. Hızlı kargo, orijinal ürün garantisi.',
+    canonical: '/',
+    schema: [createOrganizationSchema(), createWebSiteSchema()],
+  });
+
   const [heroIndex, setHeroIndex] = useState(0);
   const heroSlides = useMemo(() => [
-    { image: HERO_BANNER_1, title: 'Premium Sporcu Gıdaları', subtitle: 'Orijinal ürün garantisi ile Türkiye\'nin en güvenilir sporcu gıdaları mağazası', cta: 'Alışverişe Başla', link: '/kategori/protein-tozu' },
+    { image: HERO_BANNER_1, title: 'Premium Sporcu Gıdaları', subtitle: 'Orijinal ürün garantisi ile sporcu gıdaları mağazanız', cta: 'Alışverişe Başla', link: '/kategori/protein-tozu' },
     { image: HERO_BANNER_2, title: 'Hedefine Ulaş', subtitle: 'Profesyonel formüller, bilimsel destekli takviyeler ile performansını zirveye taşı', cta: 'Ürünleri Keşfet', link: '/kategori/performans-guc' },
   ], []);
 
@@ -186,10 +215,10 @@ export default function Home() {
       <section className="bg-white border-b border-gray-100 py-4 hidden md:block">
         <div className="container grid grid-cols-4 gap-4">
           {[
-            { icon: Shield, label: '%100 Orijinal', desc: 'Tüm ürünler orijinaldir' },
-            { icon: Truck, label: 'Hızlı Kargo', desc: 'Aynı gün kargo imkanı' },
+            { icon: Shield, label: 'Orijinal Ürün', desc: 'Yetkili distribütör ürünleri' },
+            { icon: Truck, label: 'Hızlı Kargo', desc: '16:00\'a kadar sipariş, aynı gün kargo' },
             { icon: Award, label: 'Kalite Garantisi', desc: 'Memnuniyet garantisi' },
-            { icon: Zap, label: '7/24 Destek', desc: 'WhatsApp ile ulaşın' },
+            { icon: Zap, label: 'Destek', desc: 'WhatsApp ile ulaşın' },
           ].map((item, i) => (
             <div key={i} className="flex items-center gap-3">
               <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center shrink-0">
@@ -281,37 +310,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Social Proof Stats */}
-      <section className="py-10 bg-white">
-        <div className="container">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {[
-              { icon: Users, value: '50.000+', label: 'Mutlu Müşteri', color: 'from-blue-500/10 to-blue-500/5' },
-              { icon: Package, value: '120.000+', label: 'Teslim Edilen Sipariş', color: 'from-green-500/10 to-green-500/5' },
-              { icon: Star, value: '4.8/5', label: 'Müşteri Puanı', color: 'from-amber-500/10 to-amber-500/5' },
-              { icon: Shield, value: '%100', label: 'Orijinal Ürün', color: 'from-[#FF6B35]/10 to-[#FF6B35]/5' },
-            ].map((stat, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="text-center"
-              >
-                <div className={`w-14 h-14 bg-gradient-to-br ${stat.color} rounded-2xl flex items-center justify-center mx-auto mb-3`}>
-                  <stat.icon className="w-7 h-7 text-[#1B2A4A]" />
-                </div>
-                <p className="font-heading font-black text-2xl md:text-3xl text-[#1B2A4A]">{stat.value}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{stat.label}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Campaigns */}
-      <section className="py-10 bg-gray-50">
+      <section className="py-10 bg-white">
         <div className="container">
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -345,44 +345,6 @@ export default function Home() {
                 </motion.div>
               );
             })}
-          </div>
-        </div>
-      </section>
-
-      {/* Customer Reviews */}
-      <section className="py-10 bg-white">
-        <div className="container">
-          <div className="text-center mb-8">
-            <h2 className="font-heading font-bold text-xl md:text-2xl text-[#1B2A4A]">Müşterilerimiz Ne Diyor?</h2>
-            <p className="text-xs text-gray-400 mt-1">Gerçek müşteri deneyimleri</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {testimonials.map((review, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="bg-gray-50 rounded-xl p-5 border border-gray-100 hover:border-[#FF6B35]/30 transition-colors"
-              >
-                <div className="flex items-center gap-1 mb-3">
-                  {Array.from({ length: 5 }).map((_, j) => (
-                    <Star key={j} className={`w-3.5 h-3.5 ${j < review.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}`} />
-                  ))}
-                </div>
-                <p className="text-sm text-gray-600 leading-relaxed mb-4">"{review.text}"</p>
-                <div className="flex items-center gap-3 pt-3 border-t border-gray-100">
-                  <div className="w-9 h-9 bg-[#1B2A4A] rounded-full flex items-center justify-center">
-                    <span className="text-white font-heading font-bold text-sm">{review.avatar}</span>
-                  </div>
-                  <div>
-                    <p className="text-sm font-heading font-semibold text-[#1B2A4A]">{review.name}</p>
-                    <p className="text-[10px] text-gray-400">{review.product}</p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
           </div>
         </div>
       </section>

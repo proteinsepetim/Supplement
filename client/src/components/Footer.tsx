@@ -1,6 +1,7 @@
 /*
  * Footer - Athletic Precision Design
- * Gelişmiş footer: ödeme yöntemleri, sosyal medya, güvenlik rozetleri
+ * Gelişmiş footer: ödeme yöntemleri (demo etiketi), sosyal medya, güvenlik rozetleri
+ * Legal sayfalar gerçek route'lara bağlı
  */
 import { Link } from 'wouter';
 import { Phone, Mail, MapPin, Shield, Lock, CreditCard, Truck, Instagram, Facebook, Twitter, Youtube } from 'lucide-react';
@@ -20,7 +21,7 @@ export default function Footer() {
               </div>
               <span className="font-heading font-bold text-lg">Protein<span className="text-[#FF6B35]">Market</span></span>
             </div>
-            <p className="text-gray-300 text-sm mb-4 leading-relaxed">Türkiye'nin en güvenilir sporcu gıdaları ve takviye ürünleri mağazası. Orijinal ürün garantisi ile hizmetinizdeyiz.</p>
+            <p className="text-gray-300 text-sm mb-4 leading-relaxed">Sporcu gıdaları ve takviye ürünleri mağazası. Orijinal ürün garantisi ile hizmetinizdeyiz.</p>
             <div className="space-y-2.5 text-sm text-gray-300">
               <a href="tel:+905001234567" className="flex items-center gap-2.5 hover:text-[#FF6B35] transition-colors"><Phone className="w-4 h-4 text-[#FF6B35]" /> 0500 123 45 67</a>
               <a href="mailto:info@proteinmarket.com" className="flex items-center gap-2.5 hover:text-[#FF6B35] transition-colors"><Mail className="w-4 h-4 text-[#FF6B35]" /> info@proteinmarket.com</a>
@@ -29,15 +30,15 @@ export default function Footer() {
             {/* Social Media */}
             <div className="flex items-center gap-2 mt-5">
               {[
-                { icon: Instagram, label: 'Instagram' },
-                { icon: Facebook, label: 'Facebook' },
-                { icon: Twitter, label: 'Twitter' },
-                { icon: Youtube, label: 'Youtube' },
+                { icon: Instagram, label: 'Instagram', href: '#' },
+                { icon: Facebook, label: 'Facebook', href: '#' },
+                { icon: Twitter, label: 'Twitter', href: '#' },
+                { icon: Youtube, label: 'Youtube', href: '#' },
               ].map((social, i) => (
-                <button key={i} onClick={() => import('sonner').then(m => m.toast(`${social.label} sayfamız yakında!`))}
+                <a key={i} href={social.href} aria-label={social.label}
                   className="w-9 h-9 bg-white/10 rounded-lg flex items-center justify-center hover:bg-[#FF6B35] transition-colors group">
                   <social.icon className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" />
-                </button>
+                </a>
               ))}
             </div>
           </div>
@@ -63,27 +64,22 @@ export default function Footer() {
                   <Link href={`/marka/${brand.slug}`} className="text-sm text-gray-300 hover:text-[#FF6B35] transition-colors">{brand.name}</Link>
                 </li>
               ))}
-              <li><Link href="/markalar" className="text-sm text-[#FF6B35] font-semibold hover:text-white transition-colors">Tüm Markalar →</Link></li>
+              <li><Link href="/markalar" className="text-sm text-[#FF6B35] font-semibold hover:text-white transition-colors">Tüm Markalar &rarr;</Link></li>
             </ul>
           </div>
 
-          {/* Info */}
+          {/* Info - Legal sayfalar gerçek route'lara bağlı */}
           <div>
             <h3 className="font-heading font-bold text-sm uppercase tracking-wider mb-4 text-[#FF6B35]">Bilgi & Yardım</h3>
             <ul className="space-y-2.5">
-              {[
-                { label: 'Hakkımızda', icon: null },
-                { label: 'İletişim', icon: null },
-                { label: 'Kargo ve Teslimat', icon: null },
-                { label: 'İade ve Değişim', icon: null },
-                { label: 'Gizlilik Politikası', icon: null },
-                { label: 'KVKK Aydınlatma Metni', icon: null },
-                { label: 'Mesafeli Satış Sözleşmesi', icon: null },
-              ].map(item => (
-                <li key={item.label}>
-                  <button onClick={() => import('sonner').then(m => m.toast('Bu sayfa yakında aktif olacak!'))} className="text-sm text-gray-300 hover:text-[#FF6B35] transition-colors">{item.label}</button>
-                </li>
-              ))}
+              <li><Link href="/sayfa/hakkimizda" className="text-sm text-gray-300 hover:text-[#FF6B35] transition-colors">Hakkımızda</Link></li>
+              <li><Link href="/sayfa/iletisim" className="text-sm text-gray-300 hover:text-[#FF6B35] transition-colors">İletişim</Link></li>
+              <li><Link href="/sayfa/kargo-teslimat" className="text-sm text-gray-300 hover:text-[#FF6B35] transition-colors">Kargo ve Teslimat</Link></li>
+              <li><Link href="/sayfa/iade-degisim" className="text-sm text-gray-300 hover:text-[#FF6B35] transition-colors">İade ve Değişim</Link></li>
+              <li><Link href="/sayfa/gizlilik-politikasi" className="text-sm text-gray-300 hover:text-[#FF6B35] transition-colors">Gizlilik Politikası</Link></li>
+              <li><Link href="/sayfa/kvkk" className="text-sm text-gray-300 hover:text-[#FF6B35] transition-colors">KVKK Aydınlatma Metni</Link></li>
+              <li><Link href="/sayfa/mesafeli-satis" className="text-sm text-gray-300 hover:text-[#FF6B35] transition-colors">Mesafeli Satış Sözleşmesi</Link></li>
+              <li><Link href="/sayfa/sss" className="text-sm text-gray-300 hover:text-[#FF6B35] transition-colors">Sıkça Sorulan Sorular</Link></li>
             </ul>
           </div>
         </div>
@@ -97,12 +93,16 @@ export default function Footer() {
             <div>
               <p className="text-xs text-gray-400 mb-3 font-heading font-semibold uppercase tracking-wider">Ödeme Yöntemleri</p>
               <div className="flex items-center gap-3 flex-wrap">
-                {['Visa', 'Mastercard', 'Troy', 'Iyzico', 'PayTR'].map(method => (
+                {['Visa', 'Mastercard', 'Troy'].map(method => (
                   <div key={method} className="bg-white/10 rounded-lg px-3 py-1.5 flex items-center gap-1.5">
                     <CreditCard className="w-3.5 h-3.5 text-gray-400" />
                     <span className="text-xs text-gray-300 font-medium">{method}</span>
                   </div>
                 ))}
+                <div className="bg-white/10 rounded-lg px-3 py-1.5 flex items-center gap-1.5">
+                  <CreditCard className="w-3.5 h-3.5 text-gray-400" />
+                  <span className="text-xs text-gray-300 font-medium">Havale/EFT</span>
+                </div>
               </div>
             </div>
 
@@ -128,16 +128,27 @@ export default function Footer() {
         </div>
       </div>
 
+      {/* Medical Disclaimer */}
+      <div className="border-t border-white/10">
+        <div className="container py-4">
+          <div className="bg-white/5 rounded-lg p-3">
+            <p className="text-[10px] leading-relaxed text-gray-400">
+              <strong className="text-gray-300">Yasal Uyarı:</strong> Bu sitede yer alan ürünler gıda takviyesidir ve herhangi bir hastalığı teşhis, tedavi veya önleme amacı taşımaz. Ürün açıklamaları üretici bilgilerine dayanmaktadır ve Sağlık Bakanlığı tarafından değerlendirilmemiştir. Herhangi bir takviye kullanmadan önce sağlık uzmanınıza danışmanızı öneririz. Hamilelik, emzirme döneminde veya kronik bir rahatsızlığınız varsa mutlaka doktorunuza başvurun. Ürünlerin etkileri kişiden kişiye farklılık gösterebilir.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Bottom Bar */}
       <div className="border-t border-white/10">
         <div className="container py-4 flex flex-col md:flex-row items-center justify-between gap-3">
-          <p className="text-xs text-gray-400">&copy; 2025 ProteinMarket. Tüm hakları saklıdır.</p>
+          <p className="text-xs text-gray-400">&copy; {new Date().getFullYear()} ProteinMarket. Tüm hakları saklıdır.</p>
           <div className="flex items-center gap-4 text-xs text-gray-400">
-            <button onClick={() => import('sonner').then(m => m.toast('Bu sayfa yakında aktif olacak!'))} className="hover:text-[#FF6B35] transition-colors">Gizlilik Politikası</button>
+            <Link href="/sayfa/gizlilik-politikasi" className="hover:text-[#FF6B35] transition-colors">Gizlilik Politikası</Link>
             <span>|</span>
-            <button onClick={() => import('sonner').then(m => m.toast('Bu sayfa yakında aktif olacak!'))} className="hover:text-[#FF6B35] transition-colors">Kullanım Koşulları</button>
+            <Link href="/sayfa/mesafeli-satis" className="hover:text-[#FF6B35] transition-colors">Kullanım Koşulları</Link>
             <span>|</span>
-            <button onClick={() => import('sonner').then(m => m.toast('Bu sayfa yakında aktif olacak!'))} className="hover:text-[#FF6B35] transition-colors">KVKK</button>
+            <Link href="/sayfa/kvkk" className="hover:text-[#FF6B35] transition-colors">KVKK</Link>
           </div>
         </div>
       </div>

@@ -23,7 +23,7 @@ export default function StockAlertModal({ isOpen, onClose, productId, productNam
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !email.includes('@')) return;
-    addStockAlert(productId, email);
+    addStockAlert(productId, productName, email);
     setSubmitted(true);
     setTimeout(() => {
       onClose();

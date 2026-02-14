@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /sepet
+Disallow: /odeme
+Disallow: /favoriler
+Disallow: /karsilastir
+Disallow: /paket-olustur
+
+Sitemap: https://proteinmkt-nnma2hgu.manus.space/sitemap.xml

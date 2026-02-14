@@ -8,6 +8,7 @@ import { Trash2, Plus, Minus, Gift, ShoppingBag, ChevronRight, Truck, ArrowLeft 
 import { useCart } from '@/contexts/CartContext';
 import { campaigns, products, getBrandById } from '@/lib/data';
 import ProductCard from '@/components/ProductCard';
+import MobileStickyBar from '@/components/MobileStickyBar';
 import { motion } from 'framer-motion';
 
 const GIFT_OPTIONS = [
@@ -247,6 +248,12 @@ export default function CartPage() {
           </section>
         )}
       </div>
+
+      {/* Mobile Sticky Bottom Bar */}
+      <MobileStickyBar mode="cart" />
+
+      {/* Spacer for mobile sticky bar */}
+      <div className="h-20 lg:hidden" />
     </div>
   );
 }
