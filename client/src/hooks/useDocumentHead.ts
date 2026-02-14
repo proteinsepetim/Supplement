@@ -189,3 +189,88 @@ export function createFAQSchema(items: { question: string; answer: string }[]) {
     })),
   };
 }
+
+export function createLocalBusinessSchema() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Store',
+    name: 'ProteinMarket',
+    url: BASE_URL,
+    description: 'Premium sporcu gıdaları ve takviye ürünleri e-ticaret mağazası. Orijinal ürün garantisi, aynı gün kargo.',
+    image: `${BASE_URL}/logo.png`,
+    telephone: '+905001234567',
+    email: 'info@proteinmarket.com',
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: 'İstanbul',
+      addressRegion: 'İstanbul',
+      addressCountry: 'TR',
+    },
+    geo: {
+      '@type': 'GeoCoordinates',
+      latitude: 41.0082,
+      longitude: 28.9784,
+    },
+    openingHoursSpecification: {
+      '@type': 'OpeningHoursSpecification',
+      dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+      opens: '00:00',
+      closes: '23:59',
+    },
+    priceRange: '₺₺',
+    currenciesAccepted: 'TRY',
+    paymentAccepted: 'Kredi Kartı, Banka Kartı, Havale/EFT',
+    areaServed: {
+      '@type': 'Country',
+      name: 'Türkiye',
+    },
+    sameAs: [
+      'https://www.instagram.com/proteinmarket',
+      'https://www.facebook.com/proteinmarket',
+      'https://twitter.com/proteinmarket',
+    ],
+  };
+}
+
+export function createItemListSchema(products: {
+  name: string;
+  slug: string;
+  image: string;
+  price: number;
+}[]) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    itemListElement: products.map((p, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      url: `${BASE_URL}/urun/${p.slug}`,
+      name: p.name,
+      image: p.image,
+    })),
+  };
+}
+
+export function createOfferCatalogSchema(categoryName: string, products: {
+  name: string;
+  slug: string;
+  price: number;
+  inStock: boolean;
+}[]) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'OfferCatalog',
+    name: `${categoryName} - ProteinMarket`,
+    itemListElement: products.map(p => ({
+      '@type': 'Offer',
+      itemOffered: {
+        '@type': 'Product',
+        name: p.name,
+        url: `${BASE_URL}/urun/${p.slug}`,
+      },
+      priceCurrency: 'TRY',
+      price: p.price,
+      availability: p.inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+    })),
+  };
+}

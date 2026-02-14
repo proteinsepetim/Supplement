@@ -74,17 +74,18 @@
 - [x] Header'daki kullanıcı ikonu login/profil akışı (avatar + dropdown menü)
 
 ### FAZ 2: Admin Panel 2026
-- [ ] Admin panel modern UI (React 19, Tailwind v4, shadcn/ui)
-- [ ] RBAC (Rol Tabanlı Erişim) - admin/user rolleri
-- [ ] Chat-to-Data widget (doğal dil ile veri sorgulama)
-- [ ] Sipariş yönetimi, ürün CRUD, stok güncelleme
+- [x] Admin panel modern UI (React 19, Tailwind v4, shadcn/ui, recharts)
+- [x] RBAC (Rol Tabanlı Erişim) - admin/user rolleri (protectedProcedure + role check)
+- [ ] Chat-to-Data widget (doğal dil ile veri sorgulama) - sonraki adım
+- [x] Sipariş yönetimi, ürün CRUD, stok güncelleme (backend + frontend)
 
 ### FAZ 3: Supplement Sihirbazı
-- [ ] Öneri algoritması (recommendationEngine)
-- [ ] Çok adımlı modal form (cinsiyet/yaş/kilo/boy → hedef → diyet → sonuç)
-- [ ] "Hepsini Sepete Ekle" butonu
+- [x] Öneri algoritması (recommendationEngine) - mevcut, çalışıyor
+- [x] Çok adımlı form (cinsiyet → hedef → sıklık → bütçe → sonuç)
+- [x] "Tümünü Sepete Ekle" butonu - çalışıyor
 
 ### FAZ 4: SEO/GEO
-- [ ] Dinamik JSON-LD (Product, FAQPage, LocalBusiness şemaları)
-- [ ] ipinfo.io geo-tespit entegrasyonu (ücretsiz)
-- [ ] Meta etiketler güncelleme
+- [x] Dinamik JSON-LD (Product, FAQPage, LocalBusiness, ItemList, OfferCatalog şemaları)
+- [x] LocalBusiness şeması anasayfaya eklendi
+- [x] Meta etiketler güncelleme (useDocumentHead hook)
+- [ ] ipinfo.io geo-tespit entegrasyonu (sonraki adım)

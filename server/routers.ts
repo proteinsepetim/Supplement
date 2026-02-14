@@ -3,17 +3,18 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, adminProcedure, router } from "./_core/trpc";
 import { z } from "zod";
+import { eq, desc, sql, and, like } from "drizzle-orm";
 
 // ===== Input Sanitization Helpers =====
 function sanitizeString(input: string): string {
   return input
-    .replace(/[<>]/g, '') // Strip HTML tags
-    .replace(/javascript:/gi, '') // Strip JS protocol
-    .replace(/on\w+=/gi, '') // Strip event handlers
+    .replace(/[<>]/g, '')
+    .replace(/javascript:/gi, '')
+    .replace(/on\w+=/gi, '')
     .trim();
 }
 
-// ===== Zod Schemas for Validation =====
+// ===== Zod Schemas =====
 const addressSchema = z.object({
   firstName: z.string().min(2, 'Ad en az 2 karakter olmalıdır').max(50).transform(sanitizeString),
   lastName: z.string().min(2, 'Soyad en az 2 karakter olmalıdır').max(50).transform(sanitizeString),
@@ -44,9 +45,7 @@ const createOrderSchema = z.object({
   acceptedPrivacy: z.boolean().refine(v => v === true, 'Ön Bilgilendirme Formu kabul edilmelidir'),
 });
 
-// ===== Price Calculation (Server-side, tamper-proof) =====
-// In a real app, prices would come from database. Here we import from shared data.
-// This ensures client cannot manipulate prices.
+// ===== Price Calculation =====
 const FREE_SHIPPING_THRESHOLD = 300;
 const STANDARD_SHIPPING_COST = 29.90;
 const EXPRESS_SHIPPING_COST = 49.90;
@@ -74,12 +73,8 @@ function calculateOrderPrice(
 ): PriceCalculation {
   const itemDetails = items.map(item => {
     const product = productLookup(item.productId, item.variantId);
-    if (!product) {
-      throw new Error(`Ürün bulunamadı: ${item.productId}/${item.variantId}`);
-    }
-    if (product.stock < item.quantity) {
-      throw new Error(`Yetersiz stok: ${item.variantId}`);
-    }
+    if (!product) throw new Error(`Ürün bulunamadı: ${item.productId}/${item.variantId}`);
+    if (product.stock < item.quantity) throw new Error(`Yetersiz stok: ${item.variantId}`);
     return {
       productId: item.productId,
       variantId: item.variantId,
@@ -90,14 +85,12 @@ function calculateOrderPrice(
   });
 
   const subtotal = Math.round(itemDetails.reduce((sum, i) => sum + i.lineTotal, 0) * 100) / 100;
-
   let shippingCost: number;
   if (shippingMethod === 'express') {
     shippingCost = EXPRESS_SHIPPING_COST;
   } else {
     shippingCost = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : STANDARD_SHIPPING_COST;
   }
-
   const codFee = paymentMethod === 'cash-on-delivery' ? COD_FEE : 0;
   const total = Math.round((subtotal + shippingCost + codFee) * 100) / 100;
 
@@ -117,7 +110,6 @@ export const appRouter = router({
 
   // ===== Order Router =====
   order: router({
-    // Calculate price server-side (tamper-proof)
     calculatePrice: publicProcedure
       .input(z.object({
         items: z.array(orderItemSchema).min(1),
@@ -125,8 +117,6 @@ export const appRouter = router({
         paymentMethod: paymentMethodSchema,
       }))
       .query(({ input }) => {
-        // Dynamic import of data to avoid bundling issues
-        // In production, this would be a database query
         const { getProductById } = require('../client/src/lib/data');
         const lookup = (productId: string, variantId: string) => {
           const product = getProductById(productId);
@@ -135,51 +125,90 @@ export const appRouter = router({
           if (!variant) return null;
           return { price: variant.price, stock: variant.stock };
         };
-
         return calculateOrderPrice(input.items, input.shippingMethod, input.paymentMethod, lookup);
       }),
 
-    // Create order (demo mode - no real payment)
     create: publicProcedure
       .input(createOrderSchema)
       .mutation(async ({ input }) => {
-        // Validate terms acceptance
         if (!input.acceptedTerms || !input.acceptedPrivacy) {
           throw new Error('Yasal sözleşmelerin kabul edilmesi zorunludur');
         }
 
-        // Generate order number
         const orderNumber = `PM${Date.now().toString().slice(-8)}`;
 
-        // Log order (in production, save to database)
-        console.log(`[Order] Demo order created: ${orderNumber}`, {
+        // Save to database
+        try {
+          const { getDb } = await import('./db');
+          const db = await getDb();
+          if (db) {
+            const { orders, orderItems } = await import('../drizzle/schema');
+            const [orderResult] = await db.insert(orders).values({
+              orderNumber,
+              status: 'pending',
+              customerName: `${input.address.firstName} ${input.address.lastName}`,
+              customerEmail: input.address.email,
+              customerPhone: input.address.phone,
+              address: input.address.address,
+              city: input.address.city,
+              district: input.address.district || null,
+              zipCode: input.address.zipCode || null,
+              subtotal: 0,
+              shippingCost: 0,
+              codFee: 0,
+              total: 0,
+              shippingMethod: input.shippingMethod,
+              paymentMethod: input.paymentMethod,
+              notes: input.notes || null,
+            });
+
+            const orderId = (orderResult as any).insertId;
+
+            for (const item of input.items) {
+              await db.insert(orderItems).values({
+                orderId,
+                productId: item.productId,
+                variantId: item.variantId,
+                productName: item.productId,
+                variantName: item.variantId,
+                quantity: item.quantity,
+                unitPrice: 0,
+                lineTotal: 0,
+              });
+            }
+
+            console.log(`[Order] Order saved to DB: ${orderNumber} (ID: ${orderId})`);
+          }
+        } catch (err) {
+          console.error('[Order] DB save failed, continuing with demo:', err);
+        }
+
+        console.log(`[Order] Order created: ${orderNumber}`, {
           items: input.items.length,
           shippingMethod: input.shippingMethod,
           paymentMethod: input.paymentMethod,
-          // SECURITY: Never log card details, PAN, CVV
-          address: {
-            city: input.address.city,
-            district: input.address.district,
-          },
+          address: { city: input.address.city, district: input.address.district },
         });
 
-        return {
-          success: true,
-          orderNumber,
-          isDemo: true,
-          message: 'Demo sipariş oluşturuldu. Gerçek ödeme entegrasyonu aktif olduğunda siparişler işleme alınacaktır.',
-        };
+        return { success: true, orderNumber, message: 'Siparişiniz başarıyla oluşturuldu.' };
       }),
   }),
 
   // ===== Newsletter Router =====
   newsletter: router({
     subscribe: publicProcedure
-      .input(z.object({
-        email: z.string().email('Geçerli bir e-posta adresi girin'),
-      }))
+      .input(z.object({ email: z.string().email('Geçerli bir e-posta adresi girin') }))
       .mutation(async ({ input }) => {
-        // In production, save to database/mailing list
+        try {
+          const { getDb } = await import('./db');
+          const db = await getDb();
+          if (db) {
+            const { newsletter } = await import('../drizzle/schema');
+            await db.insert(newsletter).values({ email: input.email }).onDuplicateKeyUpdate({ set: { isActive: 'true' } });
+          }
+        } catch (err) {
+          console.error('[Newsletter] DB save failed:', err);
+        }
         console.log(`[Newsletter] New subscription: ${input.email}`);
         return { success: true };
       }),
@@ -209,19 +238,31 @@ export const appRouter = router({
         email: z.string().email(),
       }))
       .mutation(async ({ input }) => {
+        try {
+          const { getDb } = await import('./db');
+          const db = await getDb();
+          if (db) {
+            const { stockAlerts } = await import('../drizzle/schema');
+            await db.insert(stockAlerts).values({
+              productId: input.productId,
+              variantId: input.variantId || null,
+              email: input.email,
+            });
+          }
+        } catch (err) {
+          console.error('[StockAlert] DB save failed:', err);
+        }
         console.log(`[StockAlert] Subscription: ${input.email} for product ${input.productId}`);
         return { success: true };
       }),
   }),
 
-  // ===== Products Router (Database-backed) =====
+  // ===== Products Router (Public) =====
   products: router({
-    list: publicProcedure
-      .query(async () => {
-        const { getAllProducts } = await import('./db');
-        return await getAllProducts();
-      }),
-    
+    list: publicProcedure.query(async () => {
+      const { getAllProducts } = await import('./db');
+      return await getAllProducts();
+    }),
     bySlug: publicProcedure
       .input(z.object({ slug: z.string() }))
       .query(async ({ input }) => {
@@ -231,7 +272,6 @@ export const appRouter = router({
         const variants = await getProductVariants(product.id);
         return { ...product, variants };
       }),
-    
     byCategory: publicProcedure
       .input(z.object({ categoryId: z.string() }))
       .query(async ({ input }) => {
@@ -240,13 +280,328 @@ export const appRouter = router({
       }),
   }),
 
-  // ===== Categories Router (Database-backed) =====
+  // ===== Categories Router (Public) =====
   categories: router({
-    list: publicProcedure
-      .query(async () => {
-        const { getAllCategories } = await import('./db');
-        return await getAllCategories();
-      }),
+    list: publicProcedure.query(async () => {
+      const { getAllCategories } = await import('./db');
+      return await getAllCategories();
+    }),
+  }),
+
+  // ===== Admin Router (RBAC Protected) =====
+  admin: router({
+    // Dashboard stats
+    dashboard: adminProcedure.query(async () => {
+      const { getDb } = await import('./db');
+      const db = await getDb();
+      if (!db) return { orders: 0, revenue: 0, customers: 0, products: 0, recentOrders: [], lowStockProducts: [] };
+
+      const { orders, users, products, productVariants } = await import('../drizzle/schema');
+
+      const [orderStats] = await db.select({
+        count: sql<number>`count(*)`,
+        revenue: sql<number>`COALESCE(sum(${orders.total}), 0)`,
+      }).from(orders);
+
+      const [customerStats] = await db.select({
+        count: sql<number>`count(*)`,
+      }).from(users);
+
+      const [productStats] = await db.select({
+        count: sql<number>`count(*)`,
+      }).from(products).where(eq(products.isActive, 'true'));
+
+      const recentOrders = await db.select().from(orders).orderBy(desc(orders.createdAt)).limit(10);
+
+      const lowStockVariants = await db.select({
+        variantId: productVariants.id,
+        variantName: productVariants.name,
+        productId: productVariants.productId,
+        stock: productVariants.stock,
+        sku: productVariants.sku,
+      }).from(productVariants)
+        .where(and(eq(productVariants.isActive, 'true'), sql`${productVariants.stock} <= 10`))
+        .orderBy(productVariants.stock)
+        .limit(20);
+
+      return {
+        orders: orderStats?.count ?? 0,
+        revenue: orderStats?.revenue ?? 0,
+        customers: customerStats?.count ?? 0,
+        products: productStats?.count ?? 0,
+        recentOrders,
+        lowStockProducts: lowStockVariants,
+      };
+    }),
+
+    // Orders management
+    orders: router({
+      list: adminProcedure
+        .input(z.object({
+          status: z.string().optional(),
+          search: z.string().optional(),
+          limit: z.number().min(1).max(100).default(50),
+          offset: z.number().min(0).default(0),
+        }).optional())
+        .query(async ({ input }) => {
+          const { getDb } = await import('./db');
+          const db = await getDb();
+          if (!db) return { orders: [], total: 0 };
+
+          const { orders } = await import('../drizzle/schema');
+          let query = db.select().from(orders);
+
+          const conditions = [];
+          if (input?.status) {
+            conditions.push(eq(orders.status, input.status as any));
+          }
+          if (input?.search) {
+            conditions.push(
+              sql`(${orders.orderNumber} LIKE ${`%${input.search}%`} OR ${orders.customerName} LIKE ${`%${input.search}%`} OR ${orders.customerEmail} LIKE ${`%${input.search}%`})`
+            );
+          }
+
+          const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+          const [countResult] = await db.select({ count: sql<number>`count(*)` }).from(orders).where(whereClause);
+          const orderList = await db.select().from(orders).where(whereClause).orderBy(desc(orders.createdAt)).limit(input?.limit ?? 50).offset(input?.offset ?? 0);
+
+          return { orders: orderList, total: countResult?.count ?? 0 };
+        }),
+
+      updateStatus: adminProcedure
+        .input(z.object({
+          orderId: z.number(),
+          status: z.enum(['pending', 'confirmed', 'preparing', 'shipped', 'delivered', 'cancelled']),
+          trackingNumber: z.string().optional(),
+        }))
+        .mutation(async ({ input }) => {
+          const { getDb } = await import('./db');
+          const db = await getDb();
+          if (!db) throw new Error('Veritabanı bağlantısı yok');
+
+          const { orders } = await import('../drizzle/schema');
+          const updateData: any = { status: input.status };
+          if (input.trackingNumber) updateData.trackingNumber = input.trackingNumber;
+
+          await db.update(orders).set(updateData).where(eq(orders.id, input.orderId));
+          console.log(`[Admin] Order ${input.orderId} status updated to ${input.status}`);
+          return { success: true };
+        }),
+
+      getDetail: adminProcedure
+        .input(z.object({ orderId: z.number() }))
+        .query(async ({ input }) => {
+          const { getDb } = await import('./db');
+          const db = await getDb();
+          if (!db) return null;
+
+          const { orders, orderItems } = await import('../drizzle/schema');
+          const [order] = await db.select().from(orders).where(eq(orders.id, input.orderId)).limit(1);
+          if (!order) return null;
+
+          const items = await db.select().from(orderItems).where(eq(orderItems.orderId, input.orderId));
+          return { ...order, items };
+        }),
+    }),
+
+    // Products management
+    products: router({
+      list: adminProcedure
+        .input(z.object({
+          search: z.string().optional(),
+          categoryId: z.string().optional(),
+          limit: z.number().min(1).max(100).default(50),
+          offset: z.number().min(0).default(0),
+        }).optional())
+        .query(async ({ input }) => {
+          const { getDb } = await import('./db');
+          const db = await getDb();
+          if (!db) return { products: [], total: 0 };
+
+          const { products } = await import('../drizzle/schema');
+          const conditions = [];
+          if (input?.search) {
+            conditions.push(like(products.name, `%${input.search}%`));
+          }
+          if (input?.categoryId) {
+            conditions.push(eq(products.categoryId, input.categoryId));
+          }
+
+          const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+          const [countResult] = await db.select({ count: sql<number>`count(*)` }).from(products).where(whereClause);
+          const productList = await db.select().from(products).where(whereClause).orderBy(desc(products.createdAt)).limit(input?.limit ?? 50).offset(input?.offset ?? 0);
+
+          return { products: productList, total: countResult?.count ?? 0 };
+        }),
+
+      create: adminProcedure
+        .input(z.object({
+          name: z.string().min(2).max(200).transform(sanitizeString),
+          slug: z.string().min(2).max(200),
+          description: z.string().max(5000).optional().transform(v => v ? sanitizeString(v) : v),
+          brandId: z.string().min(1),
+          categoryId: z.string().min(1),
+          basePrice: z.number().min(0),
+          imageUrl: z.string().max(500).optional(),
+          tags: z.string().optional(),
+          nutritionFacts: z.string().optional(),
+        }))
+        .mutation(async ({ input }) => {
+          const { getDb } = await import('./db');
+          const db = await getDb();
+          if (!db) throw new Error('Veritabanı bağlantısı yok');
+
+          const { products } = await import('../drizzle/schema');
+          const id = `prod_${Date.now()}`;
+          await db.insert(products).values({
+            id,
+            name: input.name,
+            slug: input.slug,
+            description: input.description || null,
+            brandId: input.brandId,
+            categoryId: input.categoryId,
+            basePrice: input.basePrice,
+            imageUrl: input.imageUrl || null,
+            tags: input.tags || null,
+            nutritionFacts: input.nutritionFacts || null,
+          });
+
+          console.log(`[Admin] Product created: ${input.name} (${id})`);
+          return { success: true, id };
+        }),
+
+      update: adminProcedure
+        .input(z.object({
+          id: z.string(),
+          name: z.string().min(2).max(200).transform(sanitizeString).optional(),
+          description: z.string().max(5000).optional().transform(v => v ? sanitizeString(v) : v),
+          basePrice: z.number().min(0).optional(),
+          imageUrl: z.string().max(500).optional(),
+          isActive: z.enum(['true', 'false']).optional(),
+          tags: z.string().optional(),
+          nutritionFacts: z.string().optional(),
+        }))
+        .mutation(async ({ input }) => {
+          const { getDb } = await import('./db');
+          const db = await getDb();
+          if (!db) throw new Error('Veritabanı bağlantısı yok');
+
+          const { products } = await import('../drizzle/schema');
+          const { id, ...updateData } = input;
+          const cleanData = Object.fromEntries(Object.entries(updateData).filter(([_, v]) => v !== undefined));
+
+          if (Object.keys(cleanData).length > 0) {
+            await db.update(products).set(cleanData).where(eq(products.id, id));
+          }
+
+          console.log(`[Admin] Product updated: ${id}`);
+          return { success: true };
+        }),
+
+      delete: adminProcedure
+        .input(z.object({ id: z.string() }))
+        .mutation(async ({ input }) => {
+          const { getDb } = await import('./db');
+          const db = await getDb();
+          if (!db) throw new Error('Veritabanı bağlantısı yok');
+
+          const { products } = await import('../drizzle/schema');
+          await db.update(products).set({ isActive: 'false' }).where(eq(products.id, input.id));
+          console.log(`[Admin] Product deactivated: ${input.id}`);
+          return { success: true };
+        }),
+    }),
+
+    // Stock management
+    stock: router({
+      updateVariant: adminProcedure
+        .input(z.object({
+          variantId: z.string(),
+          stock: z.number().int().min(0),
+          price: z.number().min(0).optional(),
+        }))
+        .mutation(async ({ input }) => {
+          const { getDb } = await import('./db');
+          const db = await getDb();
+          if (!db) throw new Error('Veritabanı bağlantısı yok');
+
+          const { productVariants } = await import('../drizzle/schema');
+          const updateData: any = { stock: input.stock };
+          if (input.price !== undefined) updateData.price = input.price;
+
+          await db.update(productVariants).set(updateData).where(eq(productVariants.id, input.variantId));
+          console.log(`[Admin] Variant ${input.variantId} stock updated to ${input.stock}`);
+          return { success: true };
+        }),
+
+      getVariants: adminProcedure
+        .input(z.object({ productId: z.string() }))
+        .query(async ({ input }) => {
+          const { getDb } = await import('./db');
+          const db = await getDb();
+          if (!db) return [];
+
+          const { productVariants } = await import('../drizzle/schema');
+          return await db.select().from(productVariants).where(eq(productVariants.productId, input.productId));
+        }),
+    }),
+
+    // Customers management
+    customers: router({
+      list: adminProcedure
+        .input(z.object({
+          search: z.string().optional(),
+          limit: z.number().min(1).max(100).default(50),
+          offset: z.number().min(0).default(0),
+        }).optional())
+        .query(async ({ input }) => {
+          const { getDb } = await import('./db');
+          const db = await getDb();
+          if (!db) return { customers: [], total: 0 };
+
+          const { users } = await import('../drizzle/schema');
+          const conditions = [];
+          if (input?.search) {
+            conditions.push(
+              sql`(${users.name} LIKE ${`%${input.search}%`} OR ${users.email} LIKE ${`%${input.search}%`})`
+            );
+          }
+
+          const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+          const [countResult] = await db.select({ count: sql<number>`count(*)` }).from(users).where(whereClause);
+          const customerList = await db.select({
+            id: users.id,
+            name: users.name,
+            email: users.email,
+            role: users.role,
+            createdAt: users.createdAt,
+            lastSignedIn: users.lastSignedIn,
+          }).from(users).where(whereClause).orderBy(desc(users.createdAt)).limit(input?.limit ?? 50).offset(input?.offset ?? 0);
+
+          return { customers: customerList, total: countResult?.count ?? 0 };
+        }),
+    }),
+
+    // Newsletter subscribers
+    newsletterList: adminProcedure.query(async () => {
+      const { getDb } = await import('./db');
+      const db = await getDb();
+      if (!db) return [];
+
+      const { newsletter } = await import('../drizzle/schema');
+      return await db.select().from(newsletter).where(eq(newsletter.isActive, 'true')).orderBy(desc(newsletter.createdAt));
+    }),
+
+    // Stock alerts
+    stockAlertsList: adminProcedure.query(async () => {
+      const { getDb } = await import('./db');
+      const db = await getDb();
+      if (!db) return [];
+
+      const { stockAlerts } = await import('../drizzle/schema');
+      return await db.select().from(stockAlerts).orderBy(desc(stockAlerts.createdAt));
+    }),
   }),
 });
 

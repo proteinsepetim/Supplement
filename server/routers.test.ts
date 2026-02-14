@@ -199,7 +199,6 @@ describe("order.create", () => {
     const caller = appRouter.createCaller(ctx);
     const result = await caller.order.create(validOrder);
     expect(result.success).toBe(true);
-    expect(result.isDemo).toBe(true);
     expect(result.orderNumber).toMatch(/^PM\d+$/);
   });
 
