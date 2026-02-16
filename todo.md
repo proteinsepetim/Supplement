@@ -149,3 +149,29 @@
   - Variants join ile çekme
   - Type definitions güncelleme
 - [x] GitHub'a son değişiklikleri push etme
+
+## Detaylı Geliştirme Fazları
+
+### FAZ 1: Frontend-Database Entegrasyonu (✅ TAMAMLANDI)
+- [x] Products API'sine variants join ekleme (getProductWithVariants)
+- [x] ProductCard component'ini database type'larına uyarlama (adapter pattern)
+- [x] Home.tsx'i database API'lerine bağlama - ÇALİŞIYOR!
+- [x] Type definitions güncelleme ve export etme (shared/productTypes.ts)
+- [x] ProductDetail.tsx'i database API'lerine bağlama
+- [x] CategoryPage.tsx'i database API'lerine bağlama
+- [x] 9 entegrasyon testi yazıldı ve başarılı
+
+### FAZ 2: Admin Panel S3 Entegrasyonu (✅ TAMAMLANDI)
+- [x] S3 dosya yükleme backend route'ları (upload.image - zaten mevcut)
+- [x] Frontend dosya yükleme bileşeni (FileUploader - drag & drop, progress bar)
+- [ ] Admin panelde ürün görseli yükleme (sonraki faz)
+- [ ] Site ayarları modülü (logo, slider görselleri) (sonraki faz)
+- [ ] Dosya yönetimi sekmesi (sonraki faz)
+
+### FAZ 3: Gelişmiş Özellikler
+- [ ] Gerçek zamanlı stok takibi
+- [ ] Ürün filtreleme (fiyat aralığı, marka, rating)
+- [ ] Ürün sıralama (fiyat, popülerlik, yenilik)
+- [ ] Arama optimizasyonu (fuzzy search)
+- [ ] Ürün karşılaştırma özelliği database'e bağlama
+- [ ] Favoriler database'e kaydetme

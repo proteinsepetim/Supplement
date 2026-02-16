@@ -6,9 +6,11 @@
 import { useState, useMemo } from 'react';
 import { useParams, Link } from 'wouter';
 import { ChevronRight, SlidersHorizontal, X, ChevronDown } from 'lucide-react';
-import { products, categories, brands, getBrandById } from '@/lib/data';
+import { brands, getBrandById } from '@/lib/data';
 import ProductCard from '@/components/ProductCard';
 import { motion, AnimatePresence } from 'framer-motion';
+import { trpc } from '@/lib/trpc';
+import { adaptDbProductToFrontend } from '@shared/productTypes';
 
 type SortOption = 'popular' | 'price-asc' | 'price-desc' | 'rating' | 'newest';
 
@@ -20,17 +22,23 @@ export default function CategoryPage() {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
   const [expandedFilters, setExpandedFilters] = useState<Record<string, boolean>>({ brand: true, price: true });
 
+  // Fetch categories and products from database
+  const { data: categoriesData = [] } = trpc.categories.list.useQuery();
+  const { data: productsData } = trpc.products.list.useQuery({ limit: 100 });
+  
+  const categories = categoriesData;
+  const products = useMemo(() => {
+    if (!productsData?.products) return [];
+    return productsData.products.map(adaptDbProductToFrontend);
+  }, [productsData]);
+  
   const category = categories.find(c => c.slug === params.slug);
-  const subcategory = params.sub ? category?.subcategories.find(s => s.slug === params.sub) : null;
 
   const filteredProducts = useMemo(() => {
     let result = products;
 
     if (category) {
       result = result.filter(p => p.category === category.id);
-    }
-    if (subcategory) {
-      result = result.filter(p => p.subcategory === subcategory.id);
     }
     if (selectedBrands.length > 0) {
       result = result.filter(p => selectedBrands.includes(p.brandId));
@@ -52,7 +60,7 @@ export default function CategoryPage() {
       default:
         return [...result].sort((a, b) => (b.isBestseller ? 1 : 0) - (a.isBestseller ? 1 : 0));
     }
-  }, [category, subcategory, selectedBrands, priceRange, sortBy]);
+  }, [category, selectedBrands, priceRange, sortBy, products]);
 
   const availableBrands = useMemo(() => {
     const brandIds = Array.from(new Set(products.filter(p => !category || p.category === category.id).map(p => p.brandId)));
@@ -141,13 +149,7 @@ export default function CategoryPage() {
             <ChevronRight className="w-3 h-3" />
             {category ? (
               <>
-                <Link href={`/kategori/${category.slug}`} className="hover:text-[#FF6B35]">{category.name}</Link>
-                {subcategory && (
-                  <>
-                    <ChevronRight className="w-3 h-3" />
-                    <span className="text-[#1B2A4A] font-medium">{subcategory.name}</span>
-                  </>
-                )}
+                <span className="text-[#1B2A4A] font-medium">{category.name}</span>
               </>
             ) : (
               <span className="text-[#1B2A4A] font-medium">Tüm Ürünler</span>
@@ -161,7 +163,7 @@ export default function CategoryPage() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="font-heading font-bold text-2xl text-[#1B2A4A]">
-              {subcategory?.name || category?.name || 'Tüm Ürünler'}
+              {category?.name || 'Tüm Ürünler'}
             </h1>
             <p className="text-sm text-gray-400 mt-0.5">{filteredProducts.length} ürün bulundu</p>
           </div>

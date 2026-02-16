@@ -9,7 +9,9 @@ import {
   ChevronRight, ShoppingCart, Heart, Shield, Truck, Package, Star,
   TrendingUp, Check, X, Minus, Plus, RotateCcw, Zap, AlertTriangle
 } from 'lucide-react';
-import { getProductBySlug, getBrandById, getProductById, products, type Product, type ProductVariant } from '@/lib/data';
+import { getBrandById, getProductById, products, type Product, type ProductVariant } from '@/lib/data';
+import { trpc } from '@/lib/trpc';
+import { adaptDbProductToFrontend } from '@shared/productTypes';
 import { useCart } from '@/contexts/CartContext';
 import { useNotifications } from '@/contexts/NotificationContext';
 import ProductCard from '@/components/ProductCard';
@@ -47,7 +49,17 @@ function FlavorBar({ label, value, max = 5 }: { label: string; value: number; ma
 
 export default function ProductDetail() {
   const params = useParams<{ slug: string }>();
-  const product = getProductBySlug(params.slug || '');
+  
+  // Fetch product from database
+  const { data: dbProduct, isLoading } = trpc.products.bySlug.useQuery(
+    { slug: params.slug || '' },
+    { enabled: !!params.slug }
+  );
+  
+  const product = useMemo(() => {
+    if (!dbProduct) return null;
+    return adaptDbProductToFrontend(dbProduct as any);
+  }, [dbProduct]);
   const { addItem } = useCart();
   const { toggleFavorite, isFavorite, addRecentlyViewed } = useNotifications();
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);

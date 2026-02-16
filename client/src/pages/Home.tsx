@@ -7,11 +7,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'wouter';
 import { ChevronRight, Clock, Truck, Shield, Award, Zap, ArrowRight, Dumbbell, Flame, TrendingUp, Pill, Cookie, Shirt, Gift, Tag, Percent, Star, Package, Mail, CheckCircle } from 'lucide-react';
-import { products, categories, brands, campaigns } from '@/lib/data';
+import { brands, campaigns } from '@/lib/data';
 import ProductCard from '@/components/ProductCard';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { useDocumentHead, createOrganizationSchema, createWebSiteSchema, createLocalBusinessSchema } from '@/hooks/useDocumentHead';
+import { trpc } from '@/lib/trpc';
+import { adaptDbProductToFrontend } from '@shared/productTypes';
 
 const HERO_BANNER_1 = 'https://private-us-east-1.manuscdn.com/sessionFile/Ap796PH8GtTpKpQgjkfMDs/sandbox/f7hlQElW7PWg8tRhOWLqvM-img-1_1770600194000_na1fn_aGVyby1iYW5uZXItMQ.jpg?x-oss-process=image/resize,w_1920,h_1920/format,webp/quality,q_80&Expires=1798761600&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly9wcml2YXRlLXVzLWVhc3QtMS5tYW51c2Nkbi5jb20vc2Vzc2lvbkZpbGUvQXA3OTZQSDhHdFRwS3BRZ2prZk1Ecy9zYW5kYm94L2Y3aGxRRWxXN1BXZzh0UmhPV0xxdk0taW1nLTFfMTc3MDYwMDE5NDAwMF9uYTFmbl9hR1Z5YnkxaVlXNXVaWEl0TVEuanBnP3gtb3NzLXByb2Nlc3M9aW1hZ2UvcmVzaXplLHdfMTkyMCxoXzE5MjAvZm9ybWF0LHdlYnAvcXVhbGl0eSxxXzgwIiwiQ29uZGl0aW9uIjp7IkRhdGVMZXNzVGhhbiI6eyJBV1M6RXBvY2hUaW1lIjoxNzk4NzYxNjAwfX19XX0_&Key-Pair-Id=K2HSFNDJXOU9YS&Signature=czn5qLPOJlRhGCSRp8Rm49JLqNq5OnL5mjLaJYSAKmG~woE1JvZGpY9n0TWK2DaYY7jrHAG5KHYTqEWyKDhTHEzF6dQ7ZYyReKSLzDMJhIAyM1iH6E4PVhIZiKj7DH2GpkMVPm5GWkFTa2yWKCfsgFrJ7icIAtu7ySf9CaF3l8tbpYqddtNBzlRkEUOuvVOGLxSFCCYxo1ZhY6sgJ6PTTC9lP7~RDKwjtnk9D9cpNRcC-a3BYTBfuuJwY2ciBLYezseWQtfRO9gkmTCwb8BenuCN3PQBMnoyFWx6cAJBt1f3VCa2dXZK~-M-UrTPrP7vXvdYs-jt8o4wDh5uagtqKw__';
 const HERO_BANNER_2 = 'https://private-us-east-1.manuscdn.com/sessionFile/Ap796PH8GtTpKpQgjkfMDs/sandbox/f7hlQElW7PWg8tRhOWLqvM-img-2_1770600203000_na1fn_aGVyby1iYW5uZXItMg.jpg?x-oss-process=image/resize,w_1920,h_1920/format,webp/quality,q_80&Expires=1798761600&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly9wcml2YXRlLXVzLWVhc3QtMS5tYW51c2Nkbi5jb20vc2Vzc2lvbkZpbGUvQXA3OTZQSDhHdFRwS3BRZ2prZk1Ecy9zYW5kYm94L2Y3aGxRRWxXN1BXZzh0UmhPV0xxdk0taW1nLTJfMTc3MDYwMDIwMzAwMF9uYTFmbl9hR1Z5YnkxaVlXNXVaWEl0TWcuanBnP3gtb3NzLXByb2Nlc3M9aW1hZ2UvcmVzaXplLHdfMTkyMCxoXzE5MjAvZm9ybWF0LHdlYnAvcXVhbGl0eSxxXzgwIiwiQ29uZGl0aW9uIjp7IkRhdGVMZXNzVGhhbiI6eyJBV1M6RXBvY2hUaW1lIjoxNzk4NzYxNjAwfX19XX0_&Key-Pair-Id=K2HSFNDJXOU9YS&Signature=ngdsA7THoz-wMOQjf4IvZsjTsyIZc91qooXtlSxREkT1GuSxOYuuVLlqndoBduDxo-E~0~0IFVzF7H-CVEAbY9Q7coLAhzTILkihKkhx9w389TTlIxhEHsD0vTKthlpIYXCCEO6s7K18QPjXTD~p~hwv~owpGxqUFV4S8fq7NqbENQERnPz6TJVaZ3OlYG-moQjW0zMaypwqEzXulwXQygkCqBWNpzt6UXxsp2nQlINeZ3trl8gMBzsg9y87fzFb6f8TOPzNVYQ8f4Mn0-kpkIYgJ9~yKAe7OZvPyHyR6p1fFg9WZdMceoULQ65aSJ6335f8j0DAIOwpzNcSdvE~PQ__';
@@ -169,8 +171,19 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [heroSlides.length]);
 
+  // Fetch data from database
+  const { data: categoriesData = [], isLoading: categoriesLoading } = trpc.categories.list.useQuery();
+  const { data: productsData, isLoading: productsLoading } = trpc.products.list.useQuery({ limit: 50 });
+  
+  // Adapt database products to frontend format
+  const products = useMemo(() => {
+    if (!productsData?.products) return [];
+    return productsData.products.map(adaptDbProductToFrontend);
+  }, [productsData]);
+  
+  const categories = categoriesData;
   const bestsellers = products.filter(p => p.isBestseller);
-  const newProducts = products.filter(p => p.isNew);
+  const newProducts = products.slice(0, 8); // First 8 as new products
   const featuredBrands = brands.filter(b => b.featured);
 
   return (
@@ -239,7 +252,7 @@ export default function Home() {
           <h2 className="font-heading font-bold text-xl md:text-2xl text-[#1B2A4A] mb-6">Kategoriler</h2>
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-9 gap-3">
             {categories.map(cat => {
-              const IconComponent = categoryIcons[cat.icon] || Dumbbell;
+              const IconComponent = cat.icon ? (categoryIcons[cat.icon] || Dumbbell) : Dumbbell;
               return (
                 <Link key={cat.id} href={`/kategori/${cat.slug}`}
                   className="bg-white rounded-xl p-4 text-center hover:shadow-md hover:border-[#FF6B35] border border-transparent transition-all group">

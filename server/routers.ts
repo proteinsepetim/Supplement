@@ -85,7 +85,19 @@ export const appRouter = router({
         }
 
         const productList = await db.select().from(products).where(whereClause).orderBy(orderClause).limit(input?.limit ?? 50).offset(input?.offset ?? 0);
-        return { products: productList, total: countResult?.count ?? 0 };
+        
+        // Fetch variants for each product
+        const { productVariants } = await import('../drizzle/schema');
+        const productsWithVariants = await Promise.all(
+          productList.map(async (product) => {
+            const variants = await db.select().from(productVariants)
+              .where(and(eq(productVariants.productId, product.id), eq(productVariants.isActive, 'true')))
+              .orderBy(asc(productVariants.price));
+            return { ...product, variants };
+          })
+        );
+        
+        return { products: productsWithVariants, total: countResult?.count ?? 0 };
       }),
 
     bySlug: publicProcedure
