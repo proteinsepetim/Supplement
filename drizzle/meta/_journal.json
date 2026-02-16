@@ -15,6 +15,13 @@
       "when": 1771066221839,
       "tag": "0001_superb_gunslinger",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1771099148510,
+      "tag": "0002_nasty_moondragon",
+      "breakpoints": true
     }
   ]
 }

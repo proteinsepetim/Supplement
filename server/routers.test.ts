@@ -176,20 +176,26 @@ describe("stockAlert.subscribe", () => {
 // ===== Order Creation Tests =====
 describe("order.create", () => {
   const validOrder = {
-    items: [{ productId: "whey-protein-2000gr", variantId: "wp-choc-2kg", quantity: 1 }],
-    address: {
-      firstName: "Ahmet",
-      lastName: "Yılmaz",
-      email: "ahmet@example.com",
-      phone: "05551234567",
-      address: "Atatürk Caddesi No:123 Daire:4",
-      city: "İstanbul",
-      district: "Kadıköy",
-      zipCode: "34710",
-    },
+    customerName: "Ahmet Yılmaz",
+    customerEmail: "ahmet@example.com",
+    customerPhone: "05551234567",
+    address: "Atatürk Caddesi No:123 Daire:4",
+    city: "İstanbul",
+    district: "Kadıköy",
+    zipCode: "34710",
     shippingMethod: "standard" as const,
-    paymentMethod: "credit-card" as const,
+    paymentMethod: "credit_card" as const,
     notes: "Lütfen zile basın",
+    items: [
+      {
+        productId: "whey-protein-2000gr",
+        variantId: "wp-choc-2kg",
+        productName: "Whey Protein 2000gr",
+        variantName: "Çikolata - 2kg",
+        quantity: 1,
+        unitPrice: 89900,
+      },
+    ],
     acceptedTerms: true,
     acceptedPrivacy: true,
   };
@@ -224,7 +230,7 @@ describe("order.create", () => {
     await expect(
       caller.order.create({
         ...validOrder,
-        address: { ...validOrder.address, email: "not-email" },
+        customerEmail: "not-email",
       })
     ).rejects.toThrow();
   });
@@ -235,7 +241,7 @@ describe("order.create", () => {
     await expect(
       caller.order.create({
         ...validOrder,
-        address: { ...validOrder.address, phone: "12345" },
+        customerPhone: "12345",
       })
     ).rejects.toThrow();
   });
@@ -254,7 +260,7 @@ describe("order.create", () => {
     await expect(
       caller.order.create({
         ...validOrder,
-        address: { ...validOrder.address, address: "Kısa" },
+        address: "Kısa",
       })
     ).rejects.toThrow();
   });
@@ -273,9 +279,9 @@ describe("order.create", () => {
     const ctx = createPublicContext();
     const caller = appRouter.createCaller(ctx);
     const result = await caller.order.create({
-      ...validOrder,
-      paymentMethod: "cash-on-delivery",
-    });
+        ...validOrder,
+        paymentMethod: "cod",
+      });
     expect(result.success).toBe(true);
   });
 
@@ -295,11 +301,8 @@ describe("order.create", () => {
     const caller = appRouter.createCaller(ctx);
     const result = await caller.order.create({
       ...validOrder,
-      address: {
-        ...validOrder.address,
-        firstName: "Ahmet<script>alert(1)</script>",
-        address: "Atatürk Caddesi <img onerror=alert(1)> No:123 Daire:4",
-      },
+      customerName: "Ahmet<script>alert(1)</script>",
+      address: "Atatürk Caddesi <img onerror=alert(1)> No:123 Daire:4",
     });
     expect(result.success).toBe(true);
   });

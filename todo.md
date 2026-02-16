@@ -89,3 +89,53 @@
 - [x] LocalBusiness şeması anasayfaya eklendi
 - [x] Meta etiketler güncelleme (useDocumentHead hook)
 - [ ] ipinfo.io geo-tespit entegrasyonu (sonraki adım)
+
+## Master Prompt - Anahtar Teslim E-Ticaret
+
+### FAZ 1: Sistem Denetimi ve Onarım
+- [x] Mevcut veri akışı haritalama (frontend↔backend endpoint eşleşmesi)
+- [x] REPAIR_LOG.md oluşturma (tespit edilen her kırık endpoint)
+- [x] Şema normalizasyonu: Goals, Ingredients, GoalIngredients, ProductIngredients tabloları (15 tablo migrate edildi)
+- [x] SiteSettings tablosu (logo, slider, genel ayarlar)
+- [x] PageSEO tablosu (dinamik meta etiketleri)
+- [x] Seed verileri eklendi (wizard goals, ingredients, site settings)
+- [ ] API controller'ları frontend beklentisine uygun JSON döndürecek şekilde güncelleme (devam ediyor)
+
+### FAZ 2: Gelişmiş Admin Paneli
+- [x] Backend API'leri eklendi (admin.settings, admin.seo, admin.products, admin.orders)
+- [ ] Frontend admin paneli güncelleme (devam edecek)
+- [ ] Dinamik site ayarları modülü (logo/slider yükleme → S3)
+- [ ] SEO yönetim modülü (sayfa bazlı meta_title, meta_description)
+- [ ] Gelişmiş ürün yönetimi (varyasyon desteği, stok takibi)
+- [ ] Sipariş yönetimi (durum güncelleme, filtreleme)
+- [ ] Müşteri listesi ve detayları
+
+### FAZ 3: Supplement Sihirbazı (Öneri Motoru)
+- [ ] WizardGoals tablosu (Kas Yapma, Yağ Yakma, Enerji vb.)
+- [ ] WizardIngredients tablosu (Whey, BCAA, L-Karnitin vb.)
+- [ ] GoalIngredients many-to-many ilişki tablosu
+- [ ] ProductIngredients many-to-many ilişki tablosu
+- [ ] Backend öneri algoritması (hedef→bileşen→ürün sorgusu)
+- [ ] Frontend stepper UI (cinsiyet→hedef→yoğunluk→sonuç)
+- [ ] "Hepsini Sepete Ekle" butonu
+
+### FAZ 4: SEO/GEO Konfigürasyonu
+- [ ] Dinamik sitemap.xml oluşturucu (ürün/kategori eklendikçe güncellenir)
+- [ ] robots.txt güncelleme (/yonetim-paneli, /odeme, /hesap disallow)
+- [ ] JSON-LD Schema.org/Product tüm ürün sayfalarında
+- [ ] Intl.NumberFormat('tr-TR') ile TL formatlama
+- [ ] hreflang ve canonical etiketler
+
+### FAZ 5: Test ve Doğrulama
+- [ ] Vitest testleri (admin API, sihirbaz API, ürün CRUD)
+- [ ] Tarayıcı doğrulama (tüm sayfalar)
+- [ ] TypeScript hatasız derleme
+
+## GitHub & Supabase Entegrasyonu
+- [ ] Backend API'lerini test etme (TypeScript, vitest)
+- [ ] Projeyi GitHub'a yükleme (proteinsepetim/Supplement repository)
+- [ ] Supabase projesi oluşturma
+- [ ] Supabase veritabanı bağlantı string'ini .env'e ekleme
+- [ ] Drizzle migration'ları Supabase'e push etme
+- [ ] Seed verilerini Supabase'e aktarma
+- [ ] Bağlantıyı test etme
