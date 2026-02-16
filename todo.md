@@ -139,3 +139,13 @@
 - [ ] Drizzle migration'ları Supabase'e push etme
 - [ ] Seed verilerini Supabase'e aktarma
 - [ ] Bağlantıyı test etme
+
+## Veritabanı Durumu
+- [x] TiDB/MySQL veritabanı aktif ve çalışıyor (Manus tarafından yönetiliyor)
+- [x] 15 tablo migrate edildi ve seed verileri yüklendi
+- [x] Test hatalarını düzeltme (newsletter, stockAlert, product variant) - 24/24 test başarılı
+- [ ] Frontend'i database API'lerine bağlama (sonraki faz - büyük refactoring gerekiyor)
+  - ProductCard component'ini database type'larına uyarlama
+  - Variants join ile çekme
+  - Type definitions güncelleme
+- [x] GitHub'a son değişiklikleri push etme

@@ -63,7 +63,8 @@ describe("newsletter.subscribe", () => {
   it("accepts valid email", async () => {
     const ctx = createPublicContext();
     const caller = appRouter.createCaller(ctx);
-    const result = await caller.newsletter.subscribe({ email: "test@example.com" });
+    const randomEmail = `test${Date.now()}@example.com`;
+    const result = await caller.newsletter.subscribe({ email: randomEmail });
     expect(result.success).toBe(true);
   });
 
@@ -139,13 +140,14 @@ describe("contact.send", () => {
 });
 
 // ===== Stock Alert Tests =====
-describe("stockAlert.subscribe", () => {
+describe("stockAlert.create", () => {
   it("accepts valid stock alert subscription", async () => {
     const ctx = createPublicContext();
     const caller = appRouter.createCaller(ctx);
-    const result = await caller.stockAlert.subscribe({
+    const randomEmail = `alert${Date.now()}@example.com`;
+    const result = await caller.stockAlert.create({
       productId: "whey-protein-2000gr",
-      email: "test@example.com",
+      email: randomEmail,
     });
     expect(result.success).toBe(true);
   });
@@ -154,7 +156,7 @@ describe("stockAlert.subscribe", () => {
     const ctx = createPublicContext();
     const caller = appRouter.createCaller(ctx);
     await expect(
-      caller.stockAlert.subscribe({
+      caller.stockAlert.create({
         productId: "whey-protein-2000gr",
         email: "invalid",
       })
@@ -165,7 +167,7 @@ describe("stockAlert.subscribe", () => {
     const ctx = createPublicContext();
     const caller = appRouter.createCaller(ctx);
     await expect(
-      caller.stockAlert.subscribe({
+      caller.stockAlert.create({
         productId: "",
         email: "test@example.com",
       })
@@ -189,11 +191,11 @@ describe("order.create", () => {
     items: [
       {
         productId: "whey-protein-2000gr",
-        variantId: "wp-choc-2kg",
+        variantId: "whey-2000-chocolate",
         productName: "Whey Protein 2000gr",
-        variantName: "Çikolata - 2kg",
+        variantName: "2000g Çikolata",
         quantity: 1,
-        unitPrice: 89900,
+        unitPrice: 359900,
       },
     ],
     acceptedTerms: true,
@@ -205,7 +207,7 @@ describe("order.create", () => {
     const caller = appRouter.createCaller(ctx);
     const result = await caller.order.create(validOrder);
     expect(result.success).toBe(true);
-    expect(result.orderNumber).toMatch(/^PM\d+$/);
+    expect(result.orderNumber).toMatch(/^PM\d{6}-[A-Z0-9]{6}$/); // Format: PM260216-K7V2FN
   });
 
   it("rejects order without terms acceptance", async () => {
