@@ -24,15 +24,21 @@ export default function CategoryPage() {
 
   // Fetch categories and products from database
   const { data: categoriesData = [] } = trpc.categories.list.useQuery();
-  const { data: productsData } = trpc.products.list.useQuery({ limit: 100 });
-  
   const categories = categoriesData;
+  const category = categories.find(c => c.slug === params.slug);
+  
+  const backendSortBy = sortBy === 'price-asc' ? 'price_asc' : sortBy === 'price-desc' ? 'price_desc' : sortBy === 'newest' ? 'newest' : 'popular';
+  
+  const { data: productsData } = trpc.products.list.useQuery({
+    categoryId: category?.id,
+    sortBy: backendSortBy as any,
+    limit: 100,
+  });
+  
   const products = useMemo(() => {
     if (!productsData?.products) return [];
     return productsData.products.map(adaptDbProductToFrontend);
   }, [productsData]);
-  
-  const category = categories.find(c => c.slug === params.slug);
 
   const filteredProducts = useMemo(() => {
     let result = products;

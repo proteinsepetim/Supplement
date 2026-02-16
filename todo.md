@@ -175,3 +175,33 @@
 - [ ] Arama optimizasyonu (fuzzy search)
 - [ ] Ürün karşılaştırma özelliği database'e bağlama
 - [ ] Favoriler database'e kaydetme
+
+
+## Devam Eden Geliştirmeler (Faz 2)
+
+### Admin Panel Ürün Yönetimi (TAMAMLANDI)
+- [x] Ürün ekleme modalı (FileUploader entegrasyonu)
+- [x] Ürün düzenleme formu
+- [x] Ürün silme işlemi
+- [ ] Toplu ürün yükleme (CSV)
+
+### Ürün Filtreleme & Sıralama (TAMAMLANDI)
+- [x] Backend'de filtreleme query'lerini optimize etme
+- [x] Fiyat aralığı filtresi (min-max)
+- [x] Marka filtresi (multi-select)
+- [x] Rating filtresi
+- [x] Stok durumu filtresi
+- [x] Sıralama seçenekleri (fiyat, rating, yeni, popülér)
+
+### Stripe Ödeme Entegrasyonu
+- [ ] Stripe API key'lerini environment'a ekleme
+- [ ] Ödeme formu oluşturma (Stripe Elements)
+- [ ] Ödeme işleme backend route'ı
+- [ ] Ödeme başarı/hata sayfaları
+- [ ] Webhook entegrasyonu (ödeme onayı)
+
+### SEO & Performance
+- [ ] Resim optimizasyonu (WebP, lazy loading)
+- [ ] Sayfa hızı optimizasyonu (Lighthouse)
+- [ ] Structured data (Product, Organization schema)
+- [ ] Sitemap dinamik ürün sayfaları

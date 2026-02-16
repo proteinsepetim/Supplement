@@ -8,6 +8,7 @@ import { Link } from 'wouter';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { trpc } from '@/lib/trpc';
 import { toast } from 'sonner';
+import ProductFormModal from '@/components/ProductFormModal';
 import {
   LayoutDashboard, Package, ShoppingCart, Tag, Users, Truck,
   TrendingUp, Bell, Settings, ChevronRight, Search, Plus, Edit, Eye,
@@ -62,6 +63,8 @@ export default function AdminPage() {
   const [orderStatusFilter, setOrderStatusFilter] = useState('');
   const [productSearch, setProductSearch] = useState('');
   const [customerSearch, setCustomerSearch] = useState('');
+  const [productFormOpen, setProductFormOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
   // Notification context
   const { notifications, sendBulkNotification, getStats } = useNotifications();
@@ -449,6 +452,11 @@ export default function AdminPage() {
                     placeholder="Ürün adı ara..."
                     className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-[#FF6B35] focus:ring-1 focus:ring-[#FF6B35] outline-none" />
                 </div>
+                <button onClick={() => { setSelectedProduct(null); setProductFormOpen(true); }}
+                  className="px-4 py-2.5 bg-[#FF6B35] text-white rounded-xl text-sm font-medium hover:bg-[#FF6B35]/90 flex items-center gap-2 whitespace-nowrap">
+                  <Plus className="w-4 h-4" />
+                  Ürün Ekle
+                </button>
               </div>
 
               <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
@@ -487,7 +495,7 @@ export default function AdminPage() {
                             </td>
                             <td className="px-4 py-3">
                               <div className="flex items-center gap-1">
-                                <button className="p-1.5 hover:bg-gray-100 rounded-lg" title="Düzenle">
+                                <button onClick={() => { setSelectedProduct(product); setProductFormOpen(true); }} className="p-1.5 hover:bg-gray-100 rounded-lg" title="Düzenle">
                                   <Edit className="w-4 h-4 text-gray-400" />
                                 </button>
                                 <button onClick={() => { if (confirm('Bu ürünü pasife almak istediğinize emin misiniz?')) deleteProduct.mutate({ id: product.id }); }}
@@ -795,6 +803,14 @@ export default function AdminPage() {
           )}
         </div>
       </main>
+
+      {/* Product Form Modal */}
+      <ProductFormModal
+        isOpen={productFormOpen}
+        onClose={() => setProductFormOpen(false)}
+        product={selectedProduct}
+        onSuccess={() => productsQuery.refetch()}
+      />
     </div>
   );
 }
