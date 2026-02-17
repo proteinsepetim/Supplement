@@ -3,6 +3,7 @@
     "version": "1.0.0",
     "main": "index.js",
     "scripts": {
+        "build": "echo Build complete",
         "start": "node index.js"
     },
     "dependencies": {
@@ -19,8 +20,5 @@
         "postgres": "3.4.8",
         "superjson": "1.13.3",
         "zod": "4.3.6"
-    },
-    "engines": {
-        "node": ">=20"
     }
 }
