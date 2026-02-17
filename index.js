@@ -1,1 +1,1 @@
-import("./dist/index.mjs").catch(console.error);
+import "./dist/index.js";
