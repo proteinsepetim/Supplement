@@ -1,3 +1,6 @@
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+try { if (typeof import.meta.dirname === 'undefined') { Object.defineProperty(import.meta, 'dirname', { value: dirname(fileURLToPath(import.meta.url)) }); } } catch (e) {}
 var __defProp = Object.defineProperty;
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __esm = (fn, res) => function __init() {
@@ -1883,78 +1886,16 @@ async function createContext(opts) {
   };
 }
 
-// server/_core/vite.ts
+// server/_core/vite.ts (production - no vite needed)
 import express from "express";
 import fs from "fs";
-import { nanoid } from "nanoid";
 import path2 from "path";
-import { createServer as createViteServer } from "vite";
-
-// vite.config.ts
-import tailwindcss from "@tailwindcss/vite";
-import react from "@vitejs/plugin-react";
 import path from "node:path";
-import { defineConfig } from "vite";
-var vite_config_default = defineConfig({
-  plugins: [react(), tailwindcss()],
-  resolve: {
-    alias: {
-      "@": path.resolve(import.meta.dirname, "client", "src"),
-      "@shared": path.resolve(import.meta.dirname, "shared"),
-      "@assets": path.resolve(import.meta.dirname, "attached_assets")
-    }
-  },
-  envDir: path.resolve(import.meta.dirname),
-  root: path.resolve(import.meta.dirname, "client"),
-  publicDir: path.resolve(import.meta.dirname, "client", "public"),
-  build: {
-    outDir: path.resolve(import.meta.dirname, "dist/public"),
-    emptyOutDir: true
-  },
-  server: {
-    host: true,
-    allowedHosts: [
-      "localhost",
-      "127.0.0.1"
-    ]
-  }
-});
+var vite_config_default = {};
 
-// server/_core/vite.ts
+// server/_core/vite.ts (production - no-op)
 async function setupVite(app, server) {
-  const serverOptions = {
-    middlewareMode: true,
-    hmr: { server },
-    allowedHosts: true
-  };
-  const vite = await createViteServer({
-    ...vite_config_default,
-    configFile: false,
-    server: serverOptions,
-    appType: "custom"
-  });
-  app.use(vite.middlewares);
-  app.use("*", async (req, res, next) => {
-    const url = req.originalUrl;
-    try {
-      const clientTemplate = path2.resolve(
-        import.meta.dirname,
-        "../..",
-        "client",
-        "index.html"
-      );
-      let template = await fs.promises.readFile(clientTemplate, "utf-8");
-      template = template.replace(
-        `src="/src/main.tsx"`,
-        `src="/src/main.tsx?v=${nanoid()}"`
-      );
-      const page = await vite.transformIndexHtml(url, template);
-      res.status(200).set({ "Content-Type": "text/html" }).end(page);
-    } catch (e) {
-      vite.ssrFixStacktrace(e);
-      next(e);
-    }
-  });
+  console.log("[Vite] Dev mode not available in production");
 }
 function serveStatic(app) {
   const distPath = process.env.NODE_ENV === "development" ? path2.resolve(import.meta.dirname, "../..", "dist", "public") : path2.resolve(import.meta.dirname, "public");
@@ -2045,3 +1986,4 @@ async function startServer() {
   });
 }
 startServer().catch(console.error);
+
