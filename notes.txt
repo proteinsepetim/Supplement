@@ -1,0 +1,1 @@
+Screenshot review: Homepage renders correctly with hero section, trust badges, search bar, header navigation. Green theme applied. "Markalar" button visible but outline variant text not visible against white bg - need to fix. Overall layout is clean and professional.

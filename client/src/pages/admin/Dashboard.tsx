@@ -3,10 +3,69 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatPrice, getOrderStatusLabel, getOrderStatusColor } from "@shared/utils";
-import { Package, ShoppingCart, Users, TrendingUp, AlertTriangle, DollarSign } from "lucide-react";
+import { Package, ShoppingCart, Users, TrendingUp, AlertTriangle, DollarSign, BarChart3, Eye, ShoppingBag, CreditCard, CheckCircle } from "lucide-react";
+
+function SalesFunnel({ data }: { data: { pageViews: number; addToCart: number; checkoutStart: number; orderComplete: number } }) {
+  const steps = [
+    { label: "Sayfa Görüntüleme", value: data.pageViews, icon: Eye, color: "bg-blue-500" },
+    { label: "Sepete Ekleme", value: data.addToCart, icon: ShoppingBag, color: "bg-yellow-500" },
+    { label: "Checkout Başlatma", value: data.checkoutStart, icon: CreditCard, color: "bg-orange-500" },
+    { label: "Sipariş Tamamlama", value: data.orderComplete, icon: CheckCircle, color: "bg-green-500" },
+  ];
+
+  const maxValue = Math.max(data.pageViews, 1);
+
+  return (
+    <div className="space-y-4">
+      {steps.map((step, idx) => {
+        const percentage = maxValue > 0 ? (step.value / maxValue) * 100 : 0;
+        const conversionFromPrev = idx > 0 && steps[idx - 1].value > 0
+          ? ((step.value / steps[idx - 1].value) * 100).toFixed(1)
+          : null;
+
+        return (
+          <div key={step.label}>
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-2">
+                <step.icon className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">{step.label}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold">{step.value}</span>
+                {conversionFromPrev && (
+                  <Badge variant="outline" className="text-xs">%{conversionFromPrev}</Badge>
+                )}
+              </div>
+            </div>
+            <div className="h-6 bg-muted rounded-full overflow-hidden">
+              <div
+                className={`h-full ${step.color} rounded-full transition-all duration-500 flex items-center justify-end pr-2`}
+                style={{ width: `${Math.max(percentage, 2)}%` }}
+              >
+                {percentage > 15 && <span className="text-white text-xs font-medium">%{percentage.toFixed(0)}</span>}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+
+      {data.pageViews > 0 && data.orderComplete > 0 && (
+        <div className="pt-2 border-t">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">Genel Dönüşüm Oranı</span>
+            <span className="text-lg font-bold text-primary">
+              %{((data.orderComplete / data.pageViews) * 100).toFixed(2)}
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function AdminDashboard() {
   const { data, isLoading } = trpc.admin.dashboard.useQuery();
+  const { data: funnelData, isLoading: funnelLoading } = trpc.admin.analytics.funnel.useQuery({ days: 30 });
 
   if (isLoading) {
     return (
@@ -66,6 +125,26 @@ export default function AdminDashboard() {
           </Card>
         ))}
       </div>
+
+      {/* Sales Funnel */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <BarChart3 className="h-5 w-5 text-primary" /> Satış Hunisi (Son 30 Gün)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {funnelLoading ? (
+            <div className="space-y-4">
+              {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
+            </div>
+          ) : funnelData ? (
+            <SalesFunnel data={funnelData} />
+          ) : (
+            <p className="text-muted-foreground text-sm">Henüz analitik verisi yok.</p>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>

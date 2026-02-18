@@ -179,6 +179,67 @@ describe("Admin API endpoints", () => {
   });
 });
 
+describe("Quiz API endpoints", () => {
+  it("quiz.questions returns array for public", async () => {
+    const caller = appRouter.createCaller(createPublicContext());
+    const result = await caller.quiz.questions();
+    expect(Array.isArray(result)).toBe(true);
+  });
+
+  it("admin.quiz.questions returns quiz questions for admin", async () => {
+    const caller = appRouter.createCaller(createAdminContext());
+    const result = await caller.admin.quiz.questions();
+    expect(Array.isArray(result)).toBe(true);
+  });
+
+  it("admin.quiz.questions requires admin role", async () => {
+    const caller = appRouter.createCaller(createUserContext());
+    await expect(caller.admin.quiz.questions()).rejects.toThrow();
+  });
+});
+
+describe("Campaign API endpoints", () => {
+  it("campaigns.active returns array for public", async () => {
+    const caller = appRouter.createCaller(createPublicContext());
+    const result = await caller.campaigns.active();
+    expect(Array.isArray(result)).toBe(true);
+  });
+
+  it("admin.campaigns.list returns campaigns for admin", async () => {
+    const caller = appRouter.createCaller(createAdminContext());
+    const result = await caller.admin.campaigns.list();
+    expect(Array.isArray(result)).toBe(true);
+  });
+
+  it("admin.campaigns.list requires admin role", async () => {
+    const caller = appRouter.createCaller(createUserContext());
+    await expect(caller.admin.campaigns.list()).rejects.toThrow();
+  });
+});
+
+describe("Analytics API endpoints", () => {
+  it("admin.analytics.funnel returns funnel data for admin", async () => {
+    const caller = appRouter.createCaller(createAdminContext());
+    const result = await caller.admin.analytics.funnel({ days: 30 });
+    expect(result).toHaveProperty("pageViews");
+    expect(result).toHaveProperty("addToCart");
+    expect(result).toHaveProperty("checkoutStart");
+    expect(result).toHaveProperty("orderComplete");
+  });
+
+  it("admin.analytics.funnel requires admin role", async () => {
+    const caller = appRouter.createCaller(createUserContext());
+    await expect(caller.admin.analytics.funnel({ days: 30 })).rejects.toThrow();
+  });
+
+  it("analytics.track accepts events", async () => {
+    const caller = appRouter.createCaller(createPublicContext());
+    const result = await caller.analytics.track({ eventType: "page_view" });
+    expect(result).toHaveProperty("success");
+    expect(result.success).toBe(true);
+  });
+});
+
 describe("Utility functions", () => {
   it("formatPrice formats correctly", async () => {
     const { formatPrice } = await import("../shared/utils");

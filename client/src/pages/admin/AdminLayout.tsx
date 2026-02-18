@@ -7,7 +7,8 @@ import { getLoginUrl } from "@/const";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   LayoutDashboard, Package, ShoppingCart, FolderTree, Award,
-  Settings, Users, LogOut, Menu, ChevronLeft, Mail, Bell
+  Settings, Users, LogOut, Menu, ChevronLeft, Mail, Bell,
+  Sparkles, Gift, BarChart3
 } from "lucide-react";
 import { useLocation, Link } from "wouter";
 import { useState, type ReactNode } from "react";
@@ -18,6 +19,8 @@ const menuItems = [
   { icon: FolderTree, label: "Kategoriler", path: "/admin/categories" },
   { icon: Award, label: "Markalar", path: "/admin/brands" },
   { icon: ShoppingCart, label: "Siparişler", path: "/admin/orders" },
+  { icon: Sparkles, label: "Sihirbaz", path: "/admin/quiz" },
+  { icon: Gift, label: "Kampanyalar", path: "/admin/campaigns" },
   { icon: Users, label: "Müşteriler", path: "/admin/customers" },
   { icon: Mail, label: "Mesajlar", path: "/admin/messages" },
   { icon: Bell, label: "Newsletter", path: "/admin/newsletter" },

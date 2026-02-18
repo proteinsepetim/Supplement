@@ -6,7 +6,7 @@ import ProductCard from "@/components/ProductCard";
 import StoreHeader from "@/components/StoreHeader";
 import StoreFooter from "@/components/StoreFooter";
 import { Link } from "wouter";
-import { ArrowRight, Truck, Shield, Headphones, Award, ChevronRight } from "lucide-react";
+import { ArrowRight, Truck, Shield, Headphones, Award, ChevronRight, Sparkles, Target, Dumbbell } from "lucide-react";
 
 export default function Home() {
   const categoriesQ = trpc.categories.list.useQuery();
@@ -155,6 +155,38 @@ export default function Home() {
               )}
             </div>
           )}
+        </div>
+      </section>
+
+      {/* Supplement Wizard CTA */}
+      <section className="py-12 sm:py-16 bg-gradient-to-br from-primary/10 via-background to-primary/5">
+        <div className="container">
+          <div className="max-w-3xl mx-auto text-center">
+            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary rounded-full px-4 py-1.5 text-sm font-medium mb-4">
+              <Sparkles className="h-4 w-4" />
+              Yeni Özellik
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-bold mb-3">Supplement Sihirbazı</h2>
+            <p className="text-muted-foreground mb-6 max-w-xl mx-auto">
+              Hedefine uygun supplement'ı bulmak hiç bu kadar kolay olmamıştı. Birkaç soruya cevap ver, sana özel öneriler alalım.
+            </p>
+            <div className="flex flex-wrap justify-center gap-4 mb-8">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Target className="h-4 w-4 text-primary" /> Hedefe Yönelik
+              </div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Dumbbell className="h-4 w-4 text-primary" /> Kişiye Özel
+              </div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Award className="h-4 w-4 text-primary" /> Uzman Önerileri
+              </div>
+            </div>
+            <Link href="/supplement-wizard">
+              <Button size="lg" className="font-semibold min-h-[48px] px-8">
+                <Sparkles className="mr-2 h-5 w-5" /> Sihirbazı Başlat
+              </Button>
+            </Link>
+          </div>
         </div>
       </section>
 

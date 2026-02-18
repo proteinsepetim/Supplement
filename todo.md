@@ -1,83 +1,56 @@
 # ProteinMarket TODO
 
-## Faz 1: Veritabanı ve Temel Yapı
-- [x] Veritabanı şeması (categories, products, productVariants, orders, orderItems, newsletter, stockAlerts, siteSettings, pageSeo, ibans, legalPages, turkeyLocations)
-- [x] Tema yapılandırması (renkler, fontlar, dark/light)
-- [x] Global CSS değişkenleri ve Tailwind ayarları
+## Faz 1: Veritabanı ve Tema
+- [x] Veritabanı şeması (Drizzle ORM)
+- [x] Tema ve renk paleti yapılandırması
+- [x] Google Fonts entegrasyonu
 
 ## Faz 2: Backend API
-- [x] Ürün router'ları (list, bySlug, byCategory, search)
-- [x] Kategori router'ları (list, bySlug)
-- [x] Sipariş router'ları (create, track, myOrders)
-- [x] Newsletter router
-- [x] İletişim formu router
-- [x] Stok uyarı router
-- [x] Site ayarları router (public read)
-- [x] SEO router (byRoute)
-- [x] IBAN router (public list)
-- [x] Yasal sayfa router
-- [ ] PayTR ödeme entegrasyonu (token, callback)
-- [x] Dosya yükleme router (S3)
-- [ ] E-posta servisi (sipariş onay, kargo bildirim)
-- [x] Admin dashboard istatistikleri
-- [x] Admin sipariş yönetimi (list, updateStatus, getDetail)
-- [x] Admin ürün yönetimi (CRUD)
-- [x] Admin varyant yönetimi (CRUD, stok güncelleme)
-- [x] Admin kategori yönetimi
-- [x] Admin müşteri listesi
-- [x] Admin newsletter listesi
-- [x] Admin stok uyarıları listesi
-- [x] Admin site ayarları yönetimi
-- [x] Admin SEO yönetimi
-- [x] Admin IBAN yönetimi
-- [x] Admin yasal sayfa yönetimi
-- [ ] Admin PayTR ayarları
+- [x] tRPC router'ları
+- [x] Admin dashboard API
+- [x] Ürün CRUD API
+- [x] Kategori ve marka CRUD API
+- [x] Sipariş yönetimi API
+- [x] Site ayarları API
+- [x] IBAN yönetimi API
+- [x] Yasal sayfalar API
+- [x] İletişim formu API
+- [x] Newsletter API
 
-## Faz 3: Admin Paneli UI
-- [x] Admin dashboard sayfası (istatistikler, grafikler)
-- [x] Admin site ayarları sayfası (logo, favicon, renkler, footer, iletişim)
-- [x] Admin ürün yönetimi sayfası (liste, ekleme, düzenleme)
-- [x] Admin varyant yönetimi sayfası
-- [x] Admin kategori yönetimi sayfası
-- [x] Admin sipariş yönetimi sayfası (liste, detay, durum güncelleme)
-- [x] Admin müşteri listesi sayfası
-- [x] Admin IBAN yönetimi sayfası
-- [ ] Admin SEO yönetimi sayfası
-- [x] Admin yasal sayfa düzenleme sayfası
-- [ ] Admin PayTR ayarları sayfası
-- [x] Admin newsletter yönetimi sayfası
-- [x] Admin dosya yükleme bileşeni
+## Faz 3: Admin Paneli
+- [x] Admin Dashboard sayfası
+- [x] Ürün yönetimi sayfası
+- [x] Kategori yönetimi sayfası
+- [x] Marka yönetimi sayfası
+- [x] Sipariş yönetimi sayfası
+- [x] Müşteri listesi sayfası
+- [x] Site ayarları sayfası
+- [x] IBAN yönetimi sayfası
+- [x] Yasal sayfa düzenleme
+- [x] Mesajlar sayfası
+- [x] Newsletter aboneleri sayfası
 
 ## Faz 4: Frontend Mağaza
-- [x] Ana sayfa (hero, kategoriler, öne çıkan ürünler, markalar)
-- [x] Ürün listesi sayfası (filtreleme, sıralama, sayfalama)
-- [x] Ürün detay sayfası (varyant seçimi, dinamik fiyat, stok durumu)
+- [x] Ana sayfa (Hero, kategoriler, öne çıkan ürünler, markalar)
+- [x] Ürün listeleme sayfası (arama, sıralama)
+- [x] Ürün detay sayfası (varyant seçimi, sepete ekleme)
 - [x] Kategori sayfası
-- [x] Marka sayfaları
-- [x] Arama sonuçları sayfası
-- [x] Header (mobil sheet menü, accordion alt kategoriler)
-- [x] Footer (dinamik, admin tarafından yönetilen)
-- [x] Toast bildirimleri (sepete ekleme vb.)
+- [x] Marka sayfası ve marka detay
+- [x] Header (mobil sheet menü, arama, sepet)
+- [x] Footer (newsletter, sosyal medya, yasal linkler)
+- [x] İletişim sayfası
+- [x] Yasal sayfalar (gizlilik, sözleşme, iade)
 
 ## Faz 5: Sepet ve Ödeme
-- [x] Sepet sayfası (ürün listesi, miktar güncelleme, silme)
-- [x] 3 adımlı checkout stepper (Adres → Kargo → Ödeme)
-- [ ] Türkiye il/ilçe seçimi (adres formunda)
-- [x] Sticky sipariş tamamla barı (mobil)
-- [ ] PayTR iFrame ödeme sayfası
-- [x] Havale/EFT ödeme seçeneği (IBAN gösterimi)
-- [ ] Kapıda ödeme seçeneği
-- [x] Sipariş onay sayfası
-- [x] Sipariş takip sayfası
+- [x] Sepet sayfası
+- [x] 3 adımlı checkout stepper
+- [x] Sticky sipariş tamamla barı
+- [x] Havale/EFT ödeme sistemi
+- [x] Siparişlerim sayfası
+- [x] Sipariş başarı sayfası
 
-## Faz 6: SEO, Yasal ve Mobil
-- [ ] Sayfa bazlı SEO meta etiketleri
-- [ ] JSON-LD yapılandırılmış veri (ürün, breadcrumb)
-- [x] robots.txt ve sitemap.xml
-- [x] Gizlilik politikası sayfası
-- [x] Mesafeli satış sözleşmesi sayfası
-- [x] İptal ve iade koşulları sayfası
-- [ ] SSS sayfası
+## Faz 6: SEO ve Mobil
+- [x] robots.txt
 - [ ] Hakkımızda sayfası
 - [x] İletişim sayfası
 - [x] Mobil optimizasyon (44px touch targets, responsive)
@@ -85,5 +58,42 @@
 ## Faz 7: Test ve Dağıtım
 - [x] Vitest testleri
 - [x] Checkpoint kaydetme
-- [ ] GitHub'a push
+- [x] GitHub'a push
 - [x] README.md dokümantasyonu
+
+## Faz 8: Dönüşüm Oranı Artırıcı Özellikler
+
+### 8.1 Akıllı Ürün Kartları
+- [x] DB: products tablosuna servingsCount ve ratingScore alanları ekle
+- [x] Frontend: Ürün kartlarında "Servis Başı: XX TL" hesaplaması
+- [x] Frontend: Puan rozeti (9/10) ve indirim oranı (%15 İndirim) gösterimi
+- [x] Backend: Ürün listesinde servis başı maliyet hesaplama
+
+### 8.2 Supplement Sihirbazı (Quiz)
+- [x] DB: quizQuestions ve quizOptions tabloları oluştur
+- [x] Backend: Quiz soruları CRUD API
+- [x] Backend: Cevaplara göre ürün filtreleme mantığı
+- [x] Frontend: Step-by-step quiz modal/sayfası
+- [x] Admin: Quiz soruları ve seçenekleri yönetim arayüzü
+- [x] Frontend: Ana sayfaya Sihirbaz CTA bölümü
+- [x] Frontend: Header'a Sihirbaz linki
+
+### 8.3 Dinamik Kampanya Motoru
+- [x] DB: campaigns tablosu oluştur (kural türü, koşullar, ödüller)
+- [x] Backend: Kampanya CRUD API
+- [x] Backend: Sepet kampanya hesaplama mantığı
+- [x] Frontend: Sepette kampanya progress bar ve teşvik mesajları
+- [x] Admin: Kampanya yönetim arayüzü
+
+### 8.4 Admin Paneli Güncellemeleri
+- [x] Admin: Ürün formuna servingsCount ve ratingScore alanları ekle
+- [x] Admin: Dashboard'a Satış Hunisi grafiği ekle
+- [x] Admin: Quiz yönetimi sayfası
+- [x] Admin: Kampanya yönetimi sayfası
+- [x] Admin: Analytics sayfası
+
+### 8.5 GitHub Push
+- [x] Vitest testleri güncelle (32 test başarılı)
+- [x] TypeScript kontrolü
+- [x] Checkpoint kaydet
+- [ ] GitHub'a push

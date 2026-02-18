@@ -31,6 +31,9 @@ import AdminCustomers from "./pages/admin/Customers";
 import AdminMessages from "./pages/admin/Messages";
 import AdminNewsletter from "./pages/admin/Newsletter";
 import AdminSettings from "./pages/admin/Settings";
+import AdminQuizManager from "./pages/admin/QuizManager";
+import AdminCampaignManager from "./pages/admin/CampaignManager";
+import SupplementWizard from "./pages/SupplementWizard";
 
 function AdminRoutes() {
   return (
@@ -45,6 +48,8 @@ function AdminRoutes() {
         <Route path="/admin/messages" component={AdminMessages} />
         <Route path="/admin/newsletter" component={AdminNewsletter} />
         <Route path="/admin/settings" component={AdminSettings} />
+        <Route path="/admin/quiz" component={AdminQuizManager} />
+        <Route path="/admin/campaigns" component={AdminCampaignManager} />
         <Route component={NotFound} />
       </Switch>
     </AdminLayout>
@@ -66,6 +71,7 @@ function Router() {
       <Route path="/order-success/:orderNumber" component={OrderSuccess} />
       <Route path="/my-orders" component={MyOrders} />
       <Route path="/contact" component={Contact} />
+      <Route path="/supplement-wizard" component={SupplementWizard} />
       <Route path="/legal/:slug" component={LegalPage} />
       <Route path="/admin/:rest*" component={AdminRoutes} />
       <Route path="/admin" component={AdminRoutes} />

@@ -40,12 +40,13 @@ export default function AdminProducts() {
   const [form, setForm] = useState({
     name: "", slug: "", description: "", shortDescription: "",
     brandId: 0, categoryId: 0, basePrice: 0, imageUrl: "",
+    servingsCount: 0, ratingScore: 0,
     isFeatured: false, metaTitle: "", metaDescription: "", keywords: "",
   });
 
   const openCreate = () => {
     setEditingProduct(null);
-    setForm({ name: "", slug: "", description: "", shortDescription: "", brandId: 0, categoryId: 0, basePrice: 0, imageUrl: "", isFeatured: false, metaTitle: "", metaDescription: "", keywords: "" });
+    setForm({ name: "", slug: "", description: "", shortDescription: "", brandId: 0, categoryId: 0, basePrice: 0, imageUrl: "", servingsCount: 0, ratingScore: 0, isFeatured: false, metaTitle: "", metaDescription: "", keywords: "" });
     setDialogOpen(true);
   };
 
@@ -55,7 +56,8 @@ export default function AdminProducts() {
       name: product.name, slug: product.slug, description: product.description || "",
       shortDescription: product.shortDescription || "", brandId: product.brandId,
       categoryId: product.categoryId, basePrice: product.basePrice,
-      imageUrl: product.imageUrl || "", isFeatured: product.isFeatured,
+      imageUrl: product.imageUrl || "", servingsCount: product.servingsCount || 0,
+      ratingScore: product.ratingScore || 0, isFeatured: product.isFeatured,
       metaTitle: product.metaTitle || "", metaDescription: product.metaDescription || "",
       keywords: product.keywords || "",
     });
@@ -68,10 +70,15 @@ export default function AdminProducts() {
       return;
     }
     const slug = form.slug || slugify(form.name);
+    const submitData = {
+      ...form, slug,
+      servingsCount: form.servingsCount || undefined,
+      ratingScore: form.ratingScore || undefined,
+    };
     if (editingProduct) {
-      updateMutation.mutate({ id: editingProduct.id, ...form, slug });
+      updateMutation.mutate({ id: editingProduct.id, ...submitData });
     } else {
-      createMutation.mutate({ ...form, slug });
+      createMutation.mutate(submitData);
     }
   };
 
@@ -191,6 +198,18 @@ export default function AdminProducts() {
             <div className="space-y-2">
               <Label>Kısa Açıklama</Label>
               <Input value={form.shortDescription} onChange={(e) => setForm({ ...form, shortDescription: e.target.value })} placeholder="Kısa ürün açıklaması" />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Servis Sayısı</Label>
+                <Input type="number" value={form.servingsCount} onChange={(e) => setForm({ ...form, servingsCount: Number(e.target.value) })} placeholder="30" />
+                <p className="text-xs text-muted-foreground">Servis başı maliyet hesaplaması için</p>
+              </div>
+              <div className="space-y-2">
+                <Label>Puan (0-100)</Label>
+                <Input type="number" min={0} max={100} value={form.ratingScore} onChange={(e) => setForm({ ...form, ratingScore: Number(e.target.value) })} placeholder="85" />
+                <p className="text-xs text-muted-foreground">{form.ratingScore ? `Gösterim: ${(form.ratingScore / 10).toFixed(1)}/10` : "0-100 arası değer"}</p>
+              </div>
             </div>
             <div className="space-y-2">
               <Label>Açıklama</Label>

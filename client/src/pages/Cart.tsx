@@ -6,6 +6,7 @@ import StoreHeader from "@/components/StoreHeader";
 import StoreFooter from "@/components/StoreFooter";
 import { Link } from "wouter";
 import { Minus, Plus, Trash2, ShoppingBag, Package } from "lucide-react";
+import CampaignBanner from "@/components/CampaignBanner";
 
 export default function Cart() {
   const { items, updateQuantity, removeItem, subtotal, itemCount } = useCart();
@@ -71,6 +72,11 @@ export default function Cart() {
                     </CardContent>
                   </Card>
                 ))}
+              </div>
+
+              {/* Campaign Banners */}
+              <div className="lg:col-span-2">
+                <CampaignBanner />
               </div>
 
               {/* Order Summary */}

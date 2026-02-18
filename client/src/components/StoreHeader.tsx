@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { getLoginUrl } from "@/const";
 import { Link, useLocation } from "wouter";
-import { ShoppingCart, Menu, Search, User, LogOut, Settings, ChevronRight, X, Package } from "lucide-react";
+import { ShoppingCart, Menu, Search, User, LogOut, Settings, ChevronRight, X, Package, Sparkles } from "lucide-react";
 import { useState } from "react";
 
 export default function StoreHeader() {
@@ -91,6 +91,9 @@ export default function StoreHeader() {
                     })}
                   </Accordion>
                   <div className="border-t mt-4 pt-4 space-y-1">
+                    <Link href="/supplement-wizard" onClick={() => setMobileOpen(false)}>
+                      <div className="py-3 text-sm min-h-[44px] flex items-center gap-2 text-primary font-medium"><Sparkles className="h-4 w-4" /> Supplement Sihirbazı</div>
+                    </Link>
                     <Link href="/brands" onClick={() => setMobileOpen(false)}>
                       <div className="py-3 text-sm min-h-[44px] flex items-center gap-2"><Package className="h-4 w-4" /> Markalar</div>
                     </Link>
@@ -144,6 +147,9 @@ export default function StoreHeader() {
             ))}
             <Link href="/brands">
               <span className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Markalar</span>
+            </Link>
+            <Link href="/supplement-wizard">
+              <span className="text-sm font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1"><Sparkles className="h-3.5 w-3.5" /> Sihirbaz</span>
             </Link>
           </nav>
 

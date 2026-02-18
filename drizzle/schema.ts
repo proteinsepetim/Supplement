@@ -70,6 +70,8 @@ export const products = mysqlTable("products", {
   nutritionFacts: json("nutritionFacts"), // JSON object
   servingSize: varchar("servingSize", { length: 50 }),
   servingsPerContainer: int("servingsPerContainer"),
+  servingsCount: int("servingsCount"), // Toplam servis sayısı (servis başı maliyet hesabı için)
+  ratingScore: int("ratingScore").default(0), // 0-100 arası puan (10 ile böl = 10 üzerinden)
   usageInstructions: text("usageInstructions"),
   rating: int("rating").default(0),
   reviewCount: int("reviewCount").default(0),
@@ -255,3 +257,70 @@ export const turkeyDistricts = mysqlTable("turkey_districts", {
 
 export type TurkeyProvince = typeof turkeyProvinces.$inferSelect;
 export type TurkeyDistrict = typeof turkeyDistricts.$inferSelect;
+
+// ==================== QUIZ (Supplement Sihirbazı) ====================
+export const quizQuestions = mysqlTable("quiz_questions", {
+  id: int("id").autoincrement().primaryKey(),
+  questionText: varchar("questionText", { length: 500 }).notNull(),
+  questionType: mysqlEnum("questionType", ["single", "multiple"]).default("single").notNull(),
+  sortOrder: int("sortOrder").default(0).notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type QuizQuestion = typeof quizQuestions.$inferSelect;
+export type InsertQuizQuestion = typeof quizQuestions.$inferInsert;
+
+export const quizOptions = mysqlTable("quiz_options", {
+  id: int("id").autoincrement().primaryKey(),
+  questionId: int("questionId").notNull(),
+  optionText: varchar("optionText", { length: 200 }).notNull(),
+  optionIcon: varchar("optionIcon", { length: 50 }), // lucide icon name
+  categoryIds: json("categoryIds"), // JSON array of category IDs to filter
+  tagFilters: json("tagFilters"), // JSON array of tags to match
+  sortOrder: int("sortOrder").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type QuizOption = typeof quizOptions.$inferSelect;
+export type InsertQuizOption = typeof quizOptions.$inferInsert;
+
+// ==================== CAMPAIGNS (Dinamik Kampanya Motoru) ====================
+export const campaigns = mysqlTable("campaigns", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 200 }).notNull(),
+  description: text("description"),
+  ruleType: mysqlEnum("ruleType", ["min_cart_gift", "buy_x_get_y", "cart_discount_percent", "cart_discount_amount", "free_shipping"]).notNull(),
+  // Koşullar
+  minCartAmount: int("minCartAmount"), // Minimum sepet tutarı (kuruş)
+  requiredCategoryId: int("requiredCategoryId"), // Gerekli kategori
+  requiredProductCount: int("requiredProductCount"), // Gerekli ürün adedi
+  // Ödüller
+  discountPercent: int("discountPercent"), // Yüzde indirim
+  discountAmount: int("discountAmount"), // Sabit indirim (kuruş)
+  giftProductName: varchar("giftProductName", { length: 200 }), // Hediye ürün adı
+  giftProductImage: varchar("giftProductImage", { length: 500 }),
+  // Durum
+  isActive: boolean("isActive").default(true).notNull(),
+  priority: int("priority").default(0).notNull(),
+  startsAt: timestamp("startsAt"),
+  endsAt: timestamp("endsAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Campaign = typeof campaigns.$inferSelect;
+export type InsertCampaign = typeof campaigns.$inferInsert;
+
+// ==================== SITE ANALYTICS (Satış Hunisi) ====================
+export const siteAnalytics = mysqlTable("site_analytics", {
+  id: int("id").autoincrement().primaryKey(),
+  eventType: mysqlEnum("eventType", ["page_view", "add_to_cart", "checkout_start", "order_complete"]).notNull(),
+  sessionId: varchar("sessionId", { length: 100 }),
+  userId: int("userId"),
+  metadata: json("metadata"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type SiteAnalytic = typeof siteAnalytics.$inferSelect;

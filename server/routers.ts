@@ -11,6 +11,7 @@ import {
   orders, orderItems, newsletter, stockAlerts,
   siteSettings, pageSeo, ibans, legalPages,
   contactMessages, turkeyProvinces, turkeyDistricts,
+  quizQuestions, quizOptions, campaigns, siteAnalytics,
 } from "../drizzle/schema";
 import { storagePut } from "./storage";
 import { notifyOwner } from "./_core/notification";
@@ -359,6 +360,183 @@ export const appRouter = router({
     }),
   }),
 
+  // ==================== QUIZ (Public) ====================
+  quiz: router({
+    questions: publicProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      const questions = await db.select().from(quizQuestions)
+        .where(eq(quizQuestions.isActive, true))
+        .orderBy(asc(quizQuestions.sortOrder));
+      const questionsWithOptions = await Promise.all(
+        questions.map(async (q) => {
+          const options = await db.select().from(quizOptions)
+            .where(eq(quizOptions.questionId, q.id))
+            .orderBy(asc(quizOptions.sortOrder));
+          return { ...q, options };
+        })
+      );
+      return questionsWithOptions;
+    }),
+    getRecommendations: publicProcedure.input(z.object({
+      answers: z.array(z.object({
+        questionId: z.number(),
+        optionIds: z.array(z.number()),
+      })),
+    })).query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      // Collect all category IDs and tags from selected options
+      const allCategoryIds = new Set<number>();
+      const allTags = new Set<string>();
+      for (const answer of input.answers) {
+        for (const optionId of answer.optionIds) {
+          const [option] = await db.select().from(quizOptions).where(eq(quizOptions.id, optionId)).limit(1);
+          if (option) {
+            const catIds = option.categoryIds as number[] | null;
+            if (catIds && Array.isArray(catIds)) catIds.forEach(id => allCategoryIds.add(id));
+            const tags = option.tagFilters as string[] | null;
+            if (tags && Array.isArray(tags)) tags.forEach(t => allTags.add(t));
+          }
+        }
+      }
+      // Find products matching categories
+      const conditions = [eq(products.isActive, true)];
+      if (allCategoryIds.size > 0) {
+        conditions.push(sql`${products.categoryId} IN (${sql.join(Array.from(allCategoryIds).map(id => sql`${id}`), sql`, `)})`);
+      }
+      const productList = await db.select().from(products)
+        .where(and(...conditions))
+        .orderBy(desc(products.isFeatured), desc(products.reviewCount))
+        .limit(12);
+      const productsWithVariants = await Promise.all(
+        productList.map(async (product) => {
+          const variants = await db.select().from(productVariants)
+            .where(and(eq(productVariants.productId, product.id), eq(productVariants.isActive, true)))
+            .orderBy(asc(productVariants.price));
+          return { ...product, variants };
+        })
+      );
+      return productsWithVariants;
+    }),
+  }),
+
+  // ==================== CAMPAIGNS (Public) ====================
+  campaigns: router({
+    active: publicProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      const now = new Date();
+      return db.select().from(campaigns)
+        .where(and(
+          eq(campaigns.isActive, true),
+          or(
+            sql`${campaigns.startsAt} IS NULL`,
+            sql`${campaigns.startsAt} <= ${now}`
+          ),
+          or(
+            sql`${campaigns.endsAt} IS NULL`,
+            sql`${campaigns.endsAt} >= ${now}`
+          )
+        ))
+        .orderBy(desc(campaigns.priority));
+    }),
+    // Calculate applicable campaigns for a cart
+    calculate: publicProcedure.input(z.object({
+      items: z.array(z.object({
+        productId: z.number(),
+        variantId: z.number(),
+        categoryId: z.number(),
+        quantity: z.number(),
+        unitPrice: z.number(),
+      })),
+      subtotal: z.number(),
+    })).query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { appliedCampaigns: [], totalDiscount: 0, gifts: [] };
+      const now = new Date();
+      const activeCampaigns = await db.select().from(campaigns)
+        .where(and(
+          eq(campaigns.isActive, true),
+          or(sql`${campaigns.startsAt} IS NULL`, sql`${campaigns.startsAt} <= ${now}`),
+          or(sql`${campaigns.endsAt} IS NULL`, sql`${campaigns.endsAt} >= ${now}`)
+        ))
+        .orderBy(desc(campaigns.priority));
+
+      const appliedCampaigns: { id: number; name: string; description: string | null; ruleType: string; discount: number; gift?: string; giftImage?: string }[] = [];
+      let totalDiscount = 0;
+      const gifts: { name: string; image: string | null }[] = [];
+
+      for (const campaign of activeCampaigns) {
+        switch (campaign.ruleType) {
+          case "min_cart_gift": {
+            if (campaign.minCartAmount && input.subtotal >= campaign.minCartAmount) {
+              appliedCampaigns.push({ id: campaign.id, name: campaign.name, description: campaign.description, ruleType: campaign.ruleType, discount: 0, gift: campaign.giftProductName || undefined, giftImage: campaign.giftProductImage || undefined });
+              if (campaign.giftProductName) gifts.push({ name: campaign.giftProductName, image: campaign.giftProductImage });
+            }
+            break;
+          }
+          case "buy_x_get_y": {
+            if (campaign.requiredCategoryId && campaign.requiredProductCount) {
+              const categoryItems = input.items.filter(i => i.categoryId === campaign.requiredCategoryId);
+              const totalQty = categoryItems.reduce((sum, i) => sum + i.quantity, 0);
+              if (totalQty >= campaign.requiredProductCount) {
+                // Cheapest item free
+                const cheapest = categoryItems.reduce((min, i) => i.unitPrice < min.unitPrice ? i : min, categoryItems[0]);
+                if (cheapest) {
+                  totalDiscount += cheapest.unitPrice;
+                  appliedCampaigns.push({ id: campaign.id, name: campaign.name, description: campaign.description, ruleType: campaign.ruleType, discount: cheapest.unitPrice });
+                }
+              }
+            }
+            break;
+          }
+          case "cart_discount_percent": {
+            if (campaign.discountPercent && (!campaign.minCartAmount || input.subtotal >= campaign.minCartAmount)) {
+              const disc = Math.floor(input.subtotal * campaign.discountPercent / 100);
+              totalDiscount += disc;
+              appliedCampaigns.push({ id: campaign.id, name: campaign.name, description: campaign.description, ruleType: campaign.ruleType, discount: disc });
+            }
+            break;
+          }
+          case "cart_discount_amount": {
+            if (campaign.discountAmount && (!campaign.minCartAmount || input.subtotal >= campaign.minCartAmount)) {
+              totalDiscount += campaign.discountAmount;
+              appliedCampaigns.push({ id: campaign.id, name: campaign.name, description: campaign.description, ruleType: campaign.ruleType, discount: campaign.discountAmount });
+            }
+            break;
+          }
+          case "free_shipping": {
+            if (!campaign.minCartAmount || input.subtotal >= campaign.minCartAmount) {
+              appliedCampaigns.push({ id: campaign.id, name: campaign.name, description: campaign.description, ruleType: campaign.ruleType, discount: 0 });
+            }
+            break;
+          }
+        }
+      }
+      return { appliedCampaigns, totalDiscount, gifts };
+    }),
+  }),
+
+  // ==================== ANALYTICS (Public track) ====================
+  analytics: router({
+    track: publicProcedure.input(z.object({
+      eventType: z.enum(["page_view", "add_to_cart", "checkout_start", "order_complete"]),
+      sessionId: z.string().max(100).optional(),
+      metadata: z.any().optional(),
+    })).mutation(async ({ input, ctx }) => {
+      const db = await getDb();
+      if (!db) return { success: true };
+      await db.insert(siteAnalytics).values({
+        eventType: input.eventType,
+        sessionId: input.sessionId || null,
+        userId: ctx.user?.id || null,
+        metadata: input.metadata ? JSON.stringify(input.metadata) : null,
+      });
+      return { success: true };
+    }),
+  }),
+
   // ==================== STOCK ALERT (Public) ====================
   stockAlert: router({
     create: publicProcedure.input(z.object({
@@ -485,6 +663,8 @@ export const appRouter = router({
         nutritionFacts: z.any().optional(),
         servingSize: z.string().optional(),
         servingsPerContainer: z.number().optional(),
+        servingsCount: z.number().optional(),
+        ratingScore: z.number().min(0).max(100).optional(),
         usageInstructions: z.string().optional(),
         isFeatured: z.boolean().optional(),
         metaTitle: z.string().max(200).optional(),
@@ -514,6 +694,8 @@ export const appRouter = router({
         images: z.any().optional(),
         tags: z.any().optional(),
         nutritionFacts: z.any().optional(),
+        servingsCount: z.number().optional(),
+        ratingScore: z.number().min(0).max(100).optional(),
         isFeatured: z.boolean().optional(),
         isActive: z.boolean().optional(),
         metaTitle: z.string().max(200).optional(),
@@ -795,6 +977,204 @@ export const appRouter = router({
         if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB bağlantısı yok" });
         await db.delete(ibans).where(eq(ibans.id, input.id));
         return { success: true };
+      }),
+    }),
+
+    // Quiz management
+    quiz: router({
+      questions: adminProcedure.query(async () => {
+        const db = await getDb();
+        if (!db) return [];
+        const questions = await db.select().from(quizQuestions).orderBy(asc(quizQuestions.sortOrder));
+        const questionsWithOptions = await Promise.all(
+          questions.map(async (q) => {
+            const options = await db.select().from(quizOptions)
+              .where(eq(quizOptions.questionId, q.id))
+              .orderBy(asc(quizOptions.sortOrder));
+            return { ...q, options };
+          })
+        );
+        return questionsWithOptions;
+      }),
+      createQuestion: adminProcedure.input(z.object({
+        questionText: z.string().min(2).max(500),
+        questionType: z.enum(["single", "multiple"]).default("single"),
+        sortOrder: z.number().default(0),
+      })).mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB bağlantısı yok" });
+        const [result] = await db.insert(quizQuestions).values(input as any).$returningId();
+        return { success: true, id: result.id };
+      }),
+      updateQuestion: adminProcedure.input(z.object({
+        id: z.number(),
+        questionText: z.string().optional(),
+        questionType: z.enum(["single", "multiple"]).optional(),
+        sortOrder: z.number().optional(),
+        isActive: z.boolean().optional(),
+      })).mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB bağlantısı yok" });
+        const { id, ...updateData } = input;
+        const cleanData = Object.fromEntries(Object.entries(updateData).filter(([_, v]) => v !== undefined));
+        if (Object.keys(cleanData).length > 0) {
+          await db.update(quizQuestions).set(cleanData).where(eq(quizQuestions.id, id));
+        }
+        return { success: true };
+      }),
+      deleteQuestion: adminProcedure.input(z.object({ id: z.number() })).mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB bağlantısı yok" });
+        await db.delete(quizOptions).where(eq(quizOptions.questionId, input.id));
+        await db.delete(quizQuestions).where(eq(quizQuestions.id, input.id));
+        return { success: true };
+      }),
+      createOption: adminProcedure.input(z.object({
+        questionId: z.number(),
+        optionText: z.string().min(1).max(200),
+        optionIcon: z.string().optional(),
+        categoryIds: z.array(z.number()).optional(),
+        tagFilters: z.array(z.string()).optional(),
+        sortOrder: z.number().default(0),
+      })).mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB bağlantısı yok" });
+        const [result] = await db.insert(quizOptions).values({
+          ...input,
+          categoryIds: input.categoryIds ? JSON.stringify(input.categoryIds) : null,
+          tagFilters: input.tagFilters ? JSON.stringify(input.tagFilters) : null,
+        } as any).$returningId();
+        return { success: true, id: result.id };
+      }),
+      updateOption: adminProcedure.input(z.object({
+        id: z.number(),
+        optionText: z.string().optional(),
+        optionIcon: z.string().optional(),
+        categoryIds: z.array(z.number()).optional(),
+        tagFilters: z.array(z.string()).optional(),
+        sortOrder: z.number().optional(),
+      })).mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB bağlantısı yok" });
+        const { id, ...updateData } = input;
+        const cleanData: any = {};
+        for (const [k, v] of Object.entries(updateData)) {
+          if (v !== undefined) {
+            cleanData[k] = (k === "categoryIds" || k === "tagFilters") ? JSON.stringify(v) : v;
+          }
+        }
+        if (Object.keys(cleanData).length > 0) {
+          await db.update(quizOptions).set(cleanData).where(eq(quizOptions.id, id));
+        }
+        return { success: true };
+      }),
+      deleteOption: adminProcedure.input(z.object({ id: z.number() })).mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB bağlantısı yok" });
+        await db.delete(quizOptions).where(eq(quizOptions.id, input.id));
+        return { success: true };
+      }),
+    }),
+
+    // Campaign management
+    campaigns: router({
+      list: adminProcedure.query(async () => {
+        const db = await getDb();
+        if (!db) return [];
+        return db.select().from(campaigns).orderBy(desc(campaigns.priority));
+      }),
+      create: adminProcedure.input(z.object({
+        name: z.string().min(2).max(200),
+        description: z.string().optional(),
+        ruleType: z.enum(["min_cart_gift", "buy_x_get_y", "cart_discount_percent", "cart_discount_amount", "free_shipping"]),
+        minCartAmount: z.number().optional(),
+        requiredCategoryId: z.number().optional(),
+        requiredProductCount: z.number().optional(),
+        discountPercent: z.number().optional(),
+        discountAmount: z.number().optional(),
+        giftProductName: z.string().optional(),
+        giftProductImage: z.string().optional(),
+        priority: z.number().default(0),
+        startsAt: z.string().optional(),
+        endsAt: z.string().optional(),
+      })).mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB bağlantısı yok" });
+        const [result] = await db.insert(campaigns).values({
+          ...input,
+          startsAt: input.startsAt ? new Date(input.startsAt) : null,
+          endsAt: input.endsAt ? new Date(input.endsAt) : null,
+        } as any).$returningId();
+        return { success: true, id: result.id };
+      }),
+      update: adminProcedure.input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        description: z.string().optional(),
+        ruleType: z.enum(["min_cart_gift", "buy_x_get_y", "cart_discount_percent", "cart_discount_amount", "free_shipping"]).optional(),
+        minCartAmount: z.number().nullable().optional(),
+        requiredCategoryId: z.number().nullable().optional(),
+        requiredProductCount: z.number().nullable().optional(),
+        discountPercent: z.number().nullable().optional(),
+        discountAmount: z.number().nullable().optional(),
+        giftProductName: z.string().nullable().optional(),
+        giftProductImage: z.string().nullable().optional(),
+        isActive: z.boolean().optional(),
+        priority: z.number().optional(),
+        startsAt: z.string().nullable().optional(),
+        endsAt: z.string().nullable().optional(),
+      })).mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB bağlantısı yok" });
+        const { id, ...updateData } = input;
+        const cleanData: any = {};
+        for (const [k, v] of Object.entries(updateData)) {
+          if (v !== undefined) {
+            if ((k === "startsAt" || k === "endsAt") && v) cleanData[k] = new Date(v as string);
+            else cleanData[k] = v;
+          }
+        }
+        if (Object.keys(cleanData).length > 0) {
+          await db.update(campaigns).set(cleanData).where(eq(campaigns.id, id));
+        }
+        return { success: true };
+      }),
+      delete: adminProcedure.input(z.object({ id: z.number() })).mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB bağlantısı yok" });
+        await db.delete(campaigns).where(eq(campaigns.id, input.id));
+        return { success: true };
+      }),
+    }),
+
+    // Analytics / Sales Funnel
+    analytics: router({
+      funnel: adminProcedure.input(z.object({
+        days: z.number().min(1).max(90).default(30),
+      }).optional()).query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return { pageViews: 0, addToCart: 0, checkoutStart: 0, orderComplete: 0, dailyStats: [] };
+        const daysAgo = new Date();
+        daysAgo.setDate(daysAgo.getDate() - (input?.days ?? 30));
+        const [pageViews] = await db.select({ count: sql`count(*)` }).from(siteAnalytics).where(and(eq(siteAnalytics.eventType, "page_view"), sql`${siteAnalytics.createdAt} >= ${daysAgo}`));
+        const [addToCart] = await db.select({ count: sql`count(*)` }).from(siteAnalytics).where(and(eq(siteAnalytics.eventType, "add_to_cart"), sql`${siteAnalytics.createdAt} >= ${daysAgo}`));
+        const [checkoutStart] = await db.select({ count: sql`count(*)` }).from(siteAnalytics).where(and(eq(siteAnalytics.eventType, "checkout_start"), sql`${siteAnalytics.createdAt} >= ${daysAgo}`));
+        const [orderComplete] = await db.select({ count: sql`count(*)` }).from(siteAnalytics).where(and(eq(siteAnalytics.eventType, "order_complete"), sql`${siteAnalytics.createdAt} >= ${daysAgo}`));
+        // Daily breakdown
+        const dailyStats = await db.execute(sql`
+          SELECT DATE(createdAt) as date, eventType, COUNT(*) as count
+          FROM site_analytics
+          WHERE createdAt >= ${daysAgo}
+          GROUP BY DATE(createdAt), eventType
+          ORDER BY DATE(createdAt)
+        `);
+        return {
+          pageViews: Number(pageViews?.count ?? 0),
+          addToCart: Number(addToCart?.count ?? 0),
+          checkoutStart: Number(checkoutStart?.count ?? 0),
+          orderComplete: Number(orderComplete?.count ?? 0),
+          dailyStats,
+        };
       }),
     }),
 
