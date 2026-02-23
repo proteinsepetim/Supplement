@@ -96,4 +96,12 @@
 - [x] Vitest testleri güncelle (32 test başarılı)
 - [x] TypeScript kontrolü
 - [x] Checkpoint kaydet
+- [x] GitHub'a push
+
+## Faz 9: Quiz Seed Data ve Admin Kılavuzu
+- [x] Örnek kategoriler oluşturma (Protein, Karbonhidrat, Kilo Alma, Kilo Verme, vb.)
+- [x] Quiz soruları seed script
+- [x] Quiz seçenekleri ve kategori yönlendirmeleri
+- [x] Admin paneli kullanım kılavuzu (ADMIN_GUIDE.md)
+- [x] Checkpoint kaydet
 - [ ] GitHub'a push
